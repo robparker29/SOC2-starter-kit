@@ -3,6 +3,9 @@
 Welcome to the **SOC 2 Compliance Starter Kit** — a practical, open-source resource for startups and small security teams preparing for a SOC 2 audit. This project combines real-world audit experience with lightweight automation to help teams build a defensible security and compliance program without slowing down engineering.
 
 ---
+## 🤓 About Me
+
+I’m a GRC Security Analyst with a background in auditing and scripting. This project is an ongoing effort to make compliance more actionable, accessible, and automated. You can reach me via LinkedIn at linkedin.com/in/parker-w-robertson.
 
 ## 🔍 About This Project
 
