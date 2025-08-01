@@ -8,6 +8,6 @@ This is a placeholder file at the time.
 
 ## Roadmap
 
-  SOC2 -> ISO 27001
+  SOC2 -> ISO 27001 control mapping
 
   
