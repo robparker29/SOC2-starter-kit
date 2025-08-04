@@ -13,7 +13,7 @@ Key Features:
 - Audit trail generation for compliance evidence
 - Integration with SIEM and ticketing systems
 
-Author: Rob Parker
+Author: Parker Robertson
 Purpose: Automated compliance monitoring for SOC 2 audit readiness
 """
 
