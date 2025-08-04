@@ -11,10 +11,10 @@ I’m a GRC Security Analyst with a background in auditing and scripting. This p
 
 SOC 2 compliance can be overwhelming, especially for startups with limited resources. This kit provides:
 
-- ✅ Actionable control implementation guidance
-- 🧾 Sample policies and evidence templates
+- ✅ Actionable control implementation guidance (Coming Soon)
+- 🧾 Sample policies and evidence templates (Coming Soon)
 - 🔐 Security scripts to automate audit readiness
-- 📊 Risk and control mapping tools
+- 📊 Risk and control mapping tools (Coming Soon)
 
 Whether you're working toward SOC 2 Type I or II, this repository is designed to help you bridge the gap between policy and practice.
 
@@ -26,7 +26,7 @@ Whether you're working toward SOC 2 Type I or II, this repository is designed to
 |--------|----------|
 | `/controls` | SOC 2 Common Criteria matrix, risk register, implementation guides |
 | `/evidence-checklists` | Audit-friendly templates for collecting engineering and HR evidence |
-| `/scripts` | Python and Bash scripts to automate common technical controls |
+| `/scripts` | Python scripts to automate common technical controls |
 | `/policies` | Sample markdown policies mapped to SOC 2 controls |
 
 ---
