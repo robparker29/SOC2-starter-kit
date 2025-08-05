@@ -1,0 +1,41 @@
+{
+  "aws": {
+    "access_key": "YOUR_AWS_ACCESS_KEY",
+    "secret_key": "YOUR_AWS_SECRET_KEY",
+    "region": "us-east-1",
+    "accounts": [
+      {
+        "account_id": "123456789012",
+        "role_arn": "arn:aws:iam::123456789012:role/SOC2-CrossAccount-Role",
+        "region": "us-east-1"
+      },
+      {
+        "account_id": "210987654321",
+        "role_arn": "arn:aws:iam::210987654321:role/SOC2-CrossAccount-Role",
+        "region": "us-west-2"
+      }
+    ]
+  },
+  "inactive_users": {
+    "console_threshold_days": 90,
+    "access_key_threshold_days": 180,
+    "create_tickets": false,
+    "severity_mapping": {
+      "console_inactive": "HIGH",
+      "access_key_inactive": "MEDIUM",
+      "console_never_used": "HIGH",
+      "access_key_never_used": "MEDIUM"
+    }
+  },
+  "jira": {
+    "server": "https://your-company.atlassian.net",
+    "username": "automation@yourcompany.com",
+    "api_token": "YOUR_JIRA_API_TOKEN",
+    "project_key": "SEC",
+    "issue_type": "Task"
+  },
+  "logging": {
+    "level": "INFO",
+    "file": "logs/inactive_users.log"
+  }
+}

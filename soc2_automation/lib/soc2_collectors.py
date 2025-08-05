@@ -12,7 +12,7 @@ import paramiko
 import ldap3
 from github import Github
 
-from .soc2_models import UserAccessRecord, SystemConfiguration
+from .soc2_models import UserAccessRecord, SystemConfiguration, AccessReviewFinding
 from .soc2_utils import SOC2Utils
 
 class SystemDataCollector:
@@ -646,3 +646,145 @@ class SystemDataCollector:
             #     all_logs.extend(logs)
         
         return all_logs
+    
+    # =============================================================================
+    # INACTIVE USERS ANALYSIS METHODS
+    # =============================================================================
+    
+    def analyze_inactive_users(self, console_threshold: int = 90, access_key_threshold: int = 180) -> List[AccessReviewFinding]:
+        """
+        Analyze AWS users for inactivity patterns
+        
+        Args:
+            console_threshold: Days of console inactivity to flag (default: 90)
+            access_key_threshold: Days of access key inactivity to flag (default: 180)
+            
+        Returns:
+            List of AccessReviewFinding objects for inactive users
+        """
+        self.logger.info("Analyzing AWS users for inactivity patterns...")
+        
+        try:
+            # Collect all AWS users with activity information
+            users = self.collect_aws_users(include_permissions=True, include_activity=True)
+            
+            findings = []
+            current_date = datetime.datetime.now(datetime.timezone.utc)
+            
+            iam = SOC2Utils.initialize_aws_client('iam', self.config)
+            
+            for user in users:
+                user_findings = self._analyze_user_inactivity(
+                    user, iam, current_date, console_threshold, access_key_threshold
+                )
+                findings.extend(user_findings)
+            
+            self.logger.info(f"Found {len(findings)} inactive user findings")
+            return findings
+            
+        except Exception as e:
+            self.logger.error(f"Failed to analyze inactive users: {str(e)}")
+            raise
+    
+    def _analyze_user_inactivity(self, user: UserAccessRecord, iam_client, 
+                                current_date: datetime.datetime, console_threshold: int, 
+                                access_key_threshold: int) -> List[AccessReviewFinding]:
+        """Analyze individual user for inactivity patterns"""
+        findings = []
+        
+        # Get detailed activity information
+        console_last_login = self._get_user_console_activity(user.username, iam_client)
+        access_key_last_activity = self._get_user_access_key_activity(user.username, iam_client)
+        
+        # Check console inactivity
+        if console_last_login:
+            if console_last_login.tzinfo is None:
+                console_last_login = console_last_login.replace(tzinfo=datetime.timezone.utc)
+            days_inactive = (current_date - console_last_login).days
+            
+            if days_inactive >= console_threshold:
+                findings.append(self._create_inactivity_finding(
+                    user, 'CONSOLE_INACTIVE', 'HIGH',
+                    f'Console login inactive for {days_inactive} days',
+                    'CC6.1 - Logical Access Controls',
+                    'Review user necessity and disable console access if no longer needed'
+                ))
+        else:
+            # No console activity - check if account is old enough to be concerning
+            if user.created_date:
+                if user.created_date.tzinfo is None:
+                    created_date = user.created_date.replace(tzinfo=datetime.timezone.utc)
+                else:
+                    created_date = user.created_date
+                    
+                account_age = (current_date - created_date).days
+                if account_age >= console_threshold:
+                    findings.append(self._create_inactivity_finding(
+                        user, 'CONSOLE_NEVER_USED', 'HIGH',
+                        f'Console access never used in {account_age} days since creation',
+                        'CC6.1 - Logical Access Controls',
+                        'Consider removing console permissions if not needed'
+                    ))
+        
+        # Check access key inactivity
+        if access_key_last_activity:
+            if access_key_last_activity.tzinfo is None:
+                access_key_last_activity = access_key_last_activity.replace(tzinfo=datetime.timezone.utc)
+            days_inactive = (current_date - access_key_last_activity).days
+            
+            if days_inactive >= access_key_threshold:
+                findings.append(self._create_inactivity_finding(
+                    user, 'ACCESS_KEY_INACTIVE', 'MEDIUM',
+                    f'Access keys inactive for {days_inactive} days',
+                    'CC6.2 - Least Privilege',
+                    'Review programmatic access necessity and rotate or delete unused keys'
+                ))
+        
+        return findings
+    
+    def _get_user_console_activity(self, username: str, iam_client) -> Optional[datetime.datetime]:
+        """Get user's last console login activity"""
+        try:
+            user_info = iam_client.get_user(UserName=username)
+            return user_info['User'].get('PasswordLastUsed')
+        except Exception:
+            return None
+    
+    def _get_user_access_key_activity(self, username: str, iam_client) -> Optional[datetime.datetime]:
+        """Get user's last access key activity"""
+        try:
+            access_keys = iam_client.list_access_keys(UserName=username)
+            latest_activity = None
+            
+            for key in access_keys['AccessKeyMetadata']:
+                if key['Status'] == 'Active':
+                    try:
+                        last_used = iam_client.get_access_key_last_used(AccessKeyId=key['AccessKeyId'])
+                        if 'AccessKeyLastUsed' in last_used and 'LastUsedDate' in last_used['AccessKeyLastUsed']:
+                            activity_date = last_used['AccessKeyLastUsed']['LastUsedDate']
+                            if latest_activity is None or activity_date > latest_activity:
+                                latest_activity = activity_date
+                    except Exception:
+                        continue
+            
+            return latest_activity
+        except Exception:
+            return None
+    
+    def _create_inactivity_finding(self, user: UserAccessRecord, finding_type: str, 
+                                  severity: str, details: str, control: str, 
+                                  remediation: str) -> AccessReviewFinding:
+        """Create standardized inactivity finding"""
+        finding_id = f"IAU-{user.username}-{finding_type}-{datetime.datetime.now().strftime('%Y%m%d')}"
+        
+        return AccessReviewFinding(
+            finding_id=finding_id,
+            finding_type=finding_type,
+            severity=severity,
+            user_record=user,
+            details=details,
+            soc2_control=control,
+            remediation_action=remediation,
+            created_date=datetime.datetime.now(),
+            status='OPEN'
+        )
