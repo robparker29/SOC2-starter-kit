@@ -1,8 +1,8 @@
 {
-  "id": "aws-inactive-users",
-  "started": "2025-08-05T20:08:00Z",
-  "lastUpdated": "2025-08-05T20:08:00Z",
-  "status": "complete",
+  "id": "codebase-redundancy-cleanup",
+  "started": "2025-08-05T21:05:00Z",
+  "lastUpdated": "2025-08-05T21:05:00Z",
+  "status": "active",
   "phase": "complete",
   "progress": {
     "discovery": { "answered": 5, "total": 5 },

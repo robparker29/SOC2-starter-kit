@@ -1,0 +1,91 @@
+{
+  "_schema_version": "1.0",
+  "_description": "Unified SOC 2 configuration for all automation tools",
+  
+  "aws": {
+    "access_key": "YOUR_AWS_ACCESS_KEY",
+    "secret_key": "YOUR_AWS_SECRET_KEY",
+    "region": "us-east-1",
+    "accounts": [
+      {
+        "account_id": "123456789012",
+        "role_arn": "arn:aws:iam::123456789012:role/SOC2-CrossAccount-Role",
+        "region": "us-east-1"
+      },
+      {
+        "account_id": "210987654321",
+        "role_arn": "arn:aws:iam::210987654321:role/SOC2-CrossAccount-Role",
+        "region": "us-west-2"
+      }
+    ]
+  },
+  
+  "active_directory": {
+    "server": "ldap://dc.company.com",
+    "user": "soc2-automation@company.com",
+    "password": "YOUR_AD_PASSWORD",
+    "search_base": "dc=company,dc=com"
+  },
+  
+  "github": {
+    "token": "YOUR_GITHUB_TOKEN",
+    "org_name": "your-organization"
+  },
+  
+  "linux_servers": [
+    {
+      "hostname": "prod-server-01.company.com",
+      "username": "soc2-audit",
+      "key_file": "/path/to/ssh/key.pem"
+    },
+    {
+      "hostname": "prod-server-02.company.com", 
+      "username": "soc2-audit",
+      "password": "SERVER_PASSWORD"
+    }
+  ],
+  
+  "jira": {
+    "server": "https://your-company.atlassian.net",
+    "username": "automation@yourcompany.com",
+    "api_token": "YOUR_JIRA_API_TOKEN",
+    "project_key": "SEC",
+    "issue_type": "Task"
+  },
+  
+  "user_access_review": {
+    "console_threshold_days": 90,
+    "access_key_threshold_days": 180,
+    "excessive_permissions_threshold": 10,
+    "create_tickets": false,
+    "severity_mapping": {
+      "console_inactive": "HIGH",
+      "access_key_inactive": "MEDIUM",
+      "excessive_permissions": "MEDIUM",
+      "missing_manager": "LOW",
+      "mfa_not_enabled": "HIGH"
+    }
+  },
+  
+  "evidence_collection": {
+    "retention_days": 365,
+    "output_format": ["csv", "json"],
+    "create_tickets": false,
+    "evidence_types": ["ACCESS", "CONFIG", "MONITORING", "CHANGE_MANAGEMENT"]
+  },
+  
+  "config_drift": {
+    "baseline_directory": "baselines/",
+    "alert_threshold": "MEDIUM",
+    "create_tickets": true,
+    "monitoring_systems": ["aws", "linux"]
+  },
+  
+  "global_settings": {
+    "output_directory": "soc2_reports/",
+    "log_level": "INFO",
+    "log_file": "logs/soc2_automation.log",
+    "retention_days": 90,
+    "timezone": "UTC"
+  }
+}

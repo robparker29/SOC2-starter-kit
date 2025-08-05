@@ -1,0 +1,24 @@
+#!/bin/bash
+#
+# SOC 2 Audit CLI Wrapper
+# Provides easy access to the SOC 2 automation toolkit
+#
+
+# Get the directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SOC2_CLI="$SCRIPT_DIR/soc2_automation/soc2_cli.py"
+
+# Check if Python is available
+if ! command -v python3 &> /dev/null; then
+    echo "❌ Python 3 is required but not found in PATH"
+    exit 1
+fi
+
+# Check if the CLI script exists
+if [ ! -f "$SOC2_CLI" ]; then
+    echo "❌ SOC 2 CLI script not found at: $SOC2_CLI"
+    exit 1
+fi
+
+# Execute the CLI with all arguments
+exec python3 "$SOC2_CLI" "$@"

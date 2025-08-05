@@ -25,21 +25,31 @@ from lib.soc2_models import UserAccessRecord, AccessReviewFinding, serialize_dat
 from lib.soc2_utils import SOC2Utils
 
 
-class InactiveUsersDetector(SystemDataCollector):
-    """AWS Inactive Users Detection integrated with SOC 2 automation framework"""
+class UserAccessReviewEngine(SystemDataCollector):
+    """Comprehensive User Access Review integrated with SOC 2 automation framework
+    
+    Combines inactive user detection with comprehensive access analysis including:
+    - Multi-system user access review (AWS, AD, GitHub)
+    - Inactive user detection with configurable thresholds
+    - Excessive permissions analysis
+    - Manager assignment validation
+    - Comprehensive audit reporting
+    """
     
     def __init__(self, config_path: str):
-        """Initialize detector with configuration"""
+        """Initialize access review engine with configuration"""
         self.config = SOC2Utils.load_json_config(config_path)
         super().__init__(self.config)
         
-        # Load inactive users specific config
-        self.inactive_config = self.config.get('inactive_users', {})
-        self.console_threshold = self.inactive_config.get('console_threshold_days', 90)
-        self.access_key_threshold = self.inactive_config.get('access_key_threshold_days', 180)
-        self.create_tickets = self.inactive_config.get('create_tickets', False)
+        # Load access review specific config
+        self.access_review_config = self.config.get('user_access_review', {})
+        self.console_threshold = self.access_review_config.get('console_threshold_days', 90)
+        self.access_key_threshold = self.access_review_config.get('access_key_threshold_days', 180)
+        self.permission_threshold = self.access_review_config.get('excessive_permissions_threshold', 10)
+        self.create_tickets = self.access_review_config.get('create_tickets', False)
         
         self.findings = []
+        self.users_data = []
         self.processed_accounts = []
         
     def analyze_inactive_users(self, accounts: List[str] = None) -> List[AccessReviewFinding]:
@@ -73,6 +83,203 @@ class InactiveUsersDetector(SystemDataCollector):
         self.logger.info(f"✅ Analysis complete. Found {len(all_findings)} inactive user findings across {len(self.processed_accounts)} accounts")
         
         return all_findings
+    
+    def run_comprehensive_access_review(self, systems: List[str] = None) -> List[AccessReviewFinding]:
+        """
+        Run comprehensive user access review across all configured systems
+        
+        Args:
+            systems: List of systems to review (['aws', 'active_directory', 'github'])
+            
+        Returns:
+            List of AccessReviewFinding objects for all access issues
+        """
+        self.logger.info("🔍 Starting comprehensive user access review...")
+        
+        # Default to all configured systems if none specified
+        if systems is None:
+            systems = []
+            if 'aws' in self.config:
+                systems.append('aws')
+            if 'active_directory' in self.config:
+                systems.append('active_directory')  
+            if 'github' in self.config:
+                systems.append('github')
+        
+        all_users = []
+        all_findings = []
+        
+        # Collect users from all systems
+        for system in systems:
+            try:
+                if system == 'aws':
+                    aws_users = self._collect_all_aws_users()
+                    all_users.extend(aws_users)
+                    self.logger.info(f"Collected {len(aws_users)} AWS users")
+                elif system == 'active_directory':
+                    ad_users = self.collect_ad_users(include_groups=True, include_last_login=True)
+                    all_users.extend(ad_users)
+                    self.logger.info(f"Collected {len(ad_users)} AD users")
+                elif system == 'github':
+                    github_users = self.collect_github_users(include_repos=True)
+                    all_users.extend(github_users)
+                    self.logger.info(f"Collected {len(github_users)} GitHub users")
+                    
+            except Exception as e:
+                self.logger.error(f"Failed to collect users from {system}: {str(e)}")
+                continue
+        
+        self.users_data = all_users
+        
+        # Analyze all users for access issues
+        for user in all_users:
+            user_findings = self._analyze_comprehensive_access_risks(user)
+            all_findings.extend(user_findings)
+        
+        self.findings = all_findings
+        self.logger.info(f"✅ Comprehensive access review complete. Found {len(all_findings)} findings across {len(all_users)} users")
+        
+        return all_findings
+    
+    def _collect_all_aws_users(self) -> List[UserAccessRecord]:
+        """Collect users from all configured AWS accounts"""
+        all_users = []
+        target_accounts = self._get_target_accounts(None)
+        
+        for account_config in target_accounts:
+            try:
+                account_id = account_config.get('account_id', 'current')
+                iam_client = self._get_account_iam_client(account_config)
+                users = self._collect_account_users(iam_client, account_id)
+                all_users.extend(users)
+                self.processed_accounts.append(account_id)
+            except Exception as e:
+                self.logger.error(f"Failed to collect users from account {account_config.get('account_id', 'unknown')}: {str(e)}")
+                continue
+                
+        return all_users
+    
+    def _analyze_comprehensive_access_risks(self, user: UserAccessRecord) -> List[AccessReviewFinding]:
+        """Analyze individual user for comprehensive access risks"""
+        findings = []
+        current_date = datetime.datetime.now(datetime.timezone.utc)
+        
+        # 1. Inactivity Analysis (existing logic)
+        if 'AWS' in user.system:
+            # Get detailed AWS activity for more accurate analysis
+            try:
+                # This would need the IAM client - simplified for now
+                findings.extend(self._analyze_aws_user_inactivity(user, current_date))
+            except Exception as e:
+                self.logger.warning(f"Could not analyze AWS inactivity for {user.username}: {str(e)}")
+        else:
+            # Generic inactivity analysis for other systems
+            findings.extend(self._analyze_generic_user_inactivity(user, current_date))
+        
+        # 2. Excessive Permissions Analysis
+        if len(user.permissions) > self.permission_threshold:
+            findings.append(self._create_finding(
+                user=user,
+                finding_type='EXCESSIVE_PERMISSIONS',
+                severity='MEDIUM',
+                details=f'User has {len(user.permissions)} permissions (threshold: {self.permission_threshold})',
+                control='CC6.2 - Least Privilege',
+                remediation='Review and reduce permissions to minimum required for user role'
+            ))
+        
+        # 3. Manager Assignment Validation
+        if user.manager in ['Unknown', '', None]:
+            findings.append(self._create_finding(
+                user=user,
+                finding_type='MISSING_MANAGER',
+                severity='LOW',
+                details='No manager assigned for access approval and review',
+                control='CC6.3 - Access Review and Approval',
+                remediation='Assign manager for proper access governance and periodic reviews'
+            ))
+        
+        # 4. MFA Status Check (for systems that support it)
+        if hasattr(user, 'mfa_enabled') and not user.mfa_enabled and 'AWS' in user.system:
+            findings.append(self._create_finding(
+                user=user,
+                finding_type='MFA_NOT_ENABLED',
+                severity='HIGH',
+                details='Multi-factor authentication not enabled for privileged access',
+                control='CC6.1 - Logical Access Controls',
+                remediation='Enable MFA for enhanced security on privileged accounts'
+            ))
+        
+        return findings
+    
+    def _analyze_aws_user_inactivity(self, user: UserAccessRecord, current_date: datetime.datetime) -> List[AccessReviewFinding]:
+        """AWS-specific inactivity analysis with console and access key separation"""
+        findings = []
+        
+        # This would need more detailed AWS API calls to get console vs access key activity
+        # For now, use the generic logic but with AWS-specific thresholds
+        if user.last_login:
+            if user.last_login.tzinfo is None:
+                last_login = user.last_login.replace(tzinfo=datetime.timezone.utc)
+            else:
+                last_login = user.last_login
+                
+            days_inactive = (current_date - last_login).days
+            
+            if days_inactive >= self.console_threshold:
+                severity = 'HIGH' if days_inactive > 180 else 'MEDIUM'
+                findings.append(self._create_finding(
+                    user=user,
+                    finding_type='AWS_USER_INACTIVE',
+                    severity=severity,
+                    details=f'AWS user inactive for {days_inactive} days (last activity: {last_login.strftime("%Y-%m-%d")})',
+                    control='CC6.1 - Logical Access Controls',
+                    remediation='Review user necessity and disable/remove account if no longer needed'
+                ))
+        else:
+            # No activity recorded - check account age
+            if user.created_date:
+                if user.created_date.tzinfo is None:
+                    created_date = user.created_date.replace(tzinfo=datetime.timezone.utc)
+                else:
+                    created_date = user.created_date
+                    
+                account_age = (current_date - created_date).days
+                if account_age >= self.console_threshold:
+                    findings.append(self._create_finding(
+                        user=user,
+                        finding_type='AWS_USER_NEVER_USED',
+                        severity='HIGH',
+                        details=f'AWS user never used in {account_age} days since creation',
+                        control='CC6.1 - Logical Access Controls',
+                        remediation='Review if account is needed and remove if not required'
+                    ))
+        
+        return findings
+    
+    def _analyze_generic_user_inactivity(self, user: UserAccessRecord, current_date: datetime.datetime) -> List[AccessReviewFinding]:
+        """Generic inactivity analysis for non-AWS systems"""
+        findings = []
+        
+        if user.last_login:
+            if user.last_login.tzinfo is None:
+                last_login = user.last_login.replace(tzinfo=datetime.timezone.utc)
+            else:
+                last_login = user.last_login
+                
+            days_inactive = (current_date - last_login).days
+            
+            if days_inactive >= self.console_threshold:
+                severity = 'HIGH' if days_inactive > 180 else 'MEDIUM'
+                findings.append(self._create_finding(
+                    user=user,
+                    finding_type='USER_INACTIVE',
+                    severity=severity,
+                    details=f'{user.system} user inactive for {days_inactive} days',
+                    control='CC6.1 - Logical Access Controls',
+                    remediation=f'Review user necessity in {user.system} and disable if no longer needed'
+                ))
+        
+        return findings
     
     def _get_target_accounts(self, accounts: List[str]) -> List[Dict]:
         """Get list of account configurations to analyze"""
@@ -450,30 +657,40 @@ This ticket was auto-generated by the SOC 2 AWS Inactive Users Detection automat
 
 def main():
     """Main execution function"""
-    parser = argparse.ArgumentParser(description='SOC 2 AWS Inactive Users Detection')
+    parser = argparse.ArgumentParser(description='SOC 2 User Access Review and Inactive Users Detection')
     parser.add_argument('--config', required=True, help='Path to configuration JSON file')
-    parser.add_argument('--accounts', nargs='*', help='Specific account IDs to analyze')
+    parser.add_argument('--mode', choices=['inactive-users', 'comprehensive-review'], 
+                       default='inactive-users', help='Analysis mode to run')
+    parser.add_argument('--accounts', nargs='*', help='Specific AWS account IDs to analyze')
+    parser.add_argument('--systems', nargs='*', choices=['aws', 'active_directory', 'github'],
+                       help='Systems to include in comprehensive review')
     parser.add_argument('--output-dir', help='Custom output directory for reports')
     parser.add_argument('--create-tickets', action='store_true', help='Create remediation tickets')
     parser.add_argument('--console-threshold', type=int, help='Console inactivity threshold in days')
     parser.add_argument('--access-key-threshold', type=int, help='Access key inactivity threshold in days')
+    parser.add_argument('--permission-threshold', type=int, help='Excessive permissions threshold')
     
     args = parser.parse_args()
     
     try:
-        # Initialize detector
-        detector = InactiveUsersDetector(args.config)
+        # Initialize access review engine
+        detector = UserAccessReviewEngine(args.config)
         
         # Override thresholds if provided
         if args.console_threshold:
             detector.console_threshold = args.console_threshold
         if args.access_key_threshold:
             detector.access_key_threshold = args.access_key_threshold
+        if args.permission_threshold:
+            detector.permission_threshold = args.permission_threshold
         if args.create_tickets:
             detector.create_tickets = True
         
-        # Run analysis
-        findings = detector.analyze_inactive_users(args.accounts)
+        # Run analysis based on mode
+        if args.mode == 'comprehensive-review':
+            findings = detector.run_comprehensive_access_review(args.systems)
+        else:
+            findings = detector.analyze_inactive_users(args.accounts)
         
         # Generate reports
         report_paths = detector.generate_reports(args.output_dir)
