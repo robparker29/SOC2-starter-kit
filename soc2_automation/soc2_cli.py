@@ -175,8 +175,8 @@ Examples:
         
         if args.systems:
             cmd.extend(['--systems'] + args.systems)
-        if args.accounts:
-            cmd.extend(['--accounts'] + args.accounts)
+        if hasattr(args, 'aws_accounts') and args.aws_accounts:
+            cmd.extend(['--accounts'] + args.aws_accounts)
         if args.output_dir:
             cmd.extend(['--output-dir', args.output_dir])
         if args.console_threshold:
@@ -201,8 +201,8 @@ Examples:
             '--mode', 'inactive-users'
         ]
         
-        if args.accounts:
-            cmd.extend(['--accounts'] + args.accounts)
+        if hasattr(args, 'aws_accounts') and args.aws_accounts:
+            cmd.extend(['--accounts'] + args.aws_accounts)
         if args.output_dir:
             cmd.extend(['--output-dir', args.output_dir])
         if args.console_threshold:
@@ -313,11 +313,20 @@ Examples:
             self.logger.error(f"Connectivity test failed: {str(e)}")
             return 1
     
-    def _execute_command(self, cmd):
-        """Execute a command and handle the result"""
+    def _execute_command(self, cmd: List[str]) -> int:
+        """Execute a command and handle the result with security validation"""
         try:
-            self.logger.debug(f"Executing: {' '.join(cmd)}")
-            result = subprocess.run(cmd, capture_output=True, text=True)
+            # Validate and sanitize command
+            sanitized_cmd = self._sanitize_command(cmd)
+            
+            self.logger.debug(f"Executing: {' '.join(sanitized_cmd)}")
+            result = subprocess.run(
+                sanitized_cmd, 
+                capture_output=True, 
+                text=True,
+                timeout=self.max_command_timeout,
+                check=False
+            )
             
             # Print stdout and stderr
             if result.stdout:
@@ -327,12 +336,21 @@ Examples:
             
             return result.returncode
             
+        except subprocess.TimeoutExpired:
+            self.logger.error(f"Command timed out after {self.max_command_timeout} seconds")
+            print(f"❌ Command timed out after {self.max_command_timeout} seconds")
+            return 1
+        except (ValueError, SecurityError) as e:
+            self.logger.error(f"Security validation failed: {str(e)}")
+            print(f"❌ Security error: {str(e)}")
+            return 1
         except Exception as e:
             self.logger.error(f"Failed to execute command: {str(e)}")
+            print(f"❌ Command execution failed: {str(e)}")
             return 1
     
     def _validate_config(self, config_path: str) -> bool:
-        """Validate configuration file exists and is valid JSON"""
+        """Validate configuration file exists and is valid JSON with multi-cloud support"""
         try:
             if not os.path.exists(config_path):
                 print(f"❌ Configuration file not found: {config_path}")
@@ -341,10 +359,20 @@ Examples:
             with open(config_path, 'r') as f:
                 config = json.load(f)
             
-            # Basic validation - ensure we have at least one system configured
-            if not any(key in config for key in ['aws', 'active_directory', 'github']):
-                print("❌ Configuration must include at least one system (aws, active_directory, github)")
+            # Enhanced validation for multi-cloud support
+            cloud_providers = ['aws', 'azure', 'gcp']
+            legacy_systems = ['active_directory', 'github']
+            all_systems = cloud_providers + legacy_systems
+            
+            if not any(key in config for key in all_systems):
+                print(f"❌ Configuration must include at least one system: {', '.join(all_systems)}")
                 return False
+            
+            # Validate enabled cloud providers have required fields
+            for provider in cloud_providers:
+                if provider in config and config[provider].get('_enabled', True):
+                    if not self._validate_provider_config(provider, config[provider]):
+                        return False
             
             return True
             
@@ -367,8 +395,16 @@ Examples:
         
         # Set up verbose logging if requested
         if args.verbose:
-            import logging
+            self.logger.setLevel(logging.DEBUG)
+            # Also set the root logger level for dependencies
             logging.getLogger().setLevel(logging.DEBUG)
+        
+        # Validate input arguments
+        try:
+            self._validate_threshold_args(args)
+        except ValueError as e:
+            print(f"❌ Invalid argument: {str(e)}")
+            return 1
         
         # Validate configuration
         if not self._validate_config(args.config):
@@ -384,6 +420,133 @@ Examples:
         except Exception as e:
             self.logger.error(f"Command execution failed: {str(e)}")
             return 1
+
+
+    def _setup_enhanced_logging(self) -> logging.Logger:
+        """Setup enhanced logging with rotation and structured output"""
+        logger = logging.getLogger('soc2_cli')
+        logger.setLevel(logging.INFO)
+        
+        # Clear any existing handlers
+        logger.handlers.clear()
+        
+        # Console handler
+        console_handler = logging.StreamHandler()
+        console_format = logging.Formatter(
+            '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        )
+        console_handler.setFormatter(console_format)
+        logger.addHandler(console_handler)
+        
+        # File handler with rotation
+        log_dir = self.base_dir / 'logs'
+        log_dir.mkdir(exist_ok=True)
+        
+        file_handler = RotatingFileHandler(
+            log_dir / 'soc2_cli.log',
+            maxBytes=10*1024*1024,  # 10MB
+            backupCount=5
+        )
+        file_handler.setFormatter(console_format)
+        logger.addHandler(file_handler)
+        
+        return logger
+    
+    def _sanitize_command(self, cmd: List[str]) -> List[str]:
+        """Sanitize command arguments to prevent injection attacks"""
+        if not isinstance(cmd, list):
+            raise ValueError("Command must be a list")
+        
+        if not cmd:
+            raise ValueError("Command cannot be empty")
+        
+        # Validate command components
+        sanitized_cmd = []
+        for i, arg in enumerate(cmd):
+            if not isinstance(arg, str):
+                raise ValueError(f"Invalid command argument type at position {i}: {type(arg)}")
+            
+            # Check the executable (first argument)
+            if i == 0:
+                if arg not in self.allowed_executables:
+                    raise SecurityError(f"Executable not allowed: {arg}")
+            else:
+                # Basic path traversal protection for other arguments
+                if '..' in arg:
+                    raise SecurityError(f"Path traversal attempt detected: {arg}")
+                
+                # Check for potentially dangerous characters in non-option arguments
+                if not arg.startswith('--') and not arg.startswith('-'):
+                    dangerous_chars = [';', '|', '&', '$', '`', '(', ')', '<', '>']
+                    if any(char in arg for char in dangerous_chars):
+                        # Allow these characters only in known safe contexts (like file paths)
+                        if not (os.path.isabs(arg) or arg.endswith('.json') or arg.endswith('.py')):
+                            raise SecurityError(f"Potentially dangerous characters in argument: {arg}")
+            
+            sanitized_cmd.append(arg)
+        
+        return sanitized_cmd
+    
+    def _validate_provider_config(self, provider: str, config: Dict[str, Any]) -> bool:
+        """Validate provider-specific configuration"""
+        required_fields = {
+            'aws': ['access_key', 'secret_key', 'region'],
+            'azure': ['subscription_id', 'tenant_id'],
+            'gcp': ['project_id']
+        }
+        
+        if provider not in required_fields:
+            return True  # Unknown provider, skip validation
+        
+        missing_fields = []
+        for field in required_fields[provider]:
+            if field not in config or not config[field]:
+                # Allow alternative authentication methods
+                if provider == 'aws' and field in ['access_key', 'secret_key'] and 'profile' in config:
+                    continue  # AWS profile authentication
+                if provider == 'azure' and field in ['tenant_id'] and config.get('use_managed_identity'):
+                    continue  # Azure managed identity
+                if provider == 'gcp' and field == 'project_id' and 'service_account_key_path' not in config:
+                    missing_fields.append(field)
+                elif provider != 'gcp':
+                    missing_fields.append(field)
+        
+        if missing_fields:
+            print(f"❌ {provider.upper()} configuration missing required fields: {', '.join(missing_fields)}")
+            return False
+        
+        return True
+    
+    def _validate_threshold_args(self, args) -> None:
+        """Validate threshold arguments are within reasonable ranges"""
+        thresholds = {
+            'console_threshold': (1, 365),
+            'access_key_threshold': (1, 730),
+            'permission_threshold': (1, 100)
+        }
+        
+        for attr, (min_val, max_val) in thresholds.items():
+            if hasattr(args, attr) and getattr(args, attr) is not None:
+                value = getattr(args, attr)
+                if not isinstance(value, int) or not (min_val <= value <= max_val):
+                    raise ValueError(f"{attr} must be an integer between {min_val} and {max_val}")
+    
+    def _execute_parallel_commands(self, commands: List[List[str]], max_workers: int = 3) -> List[Tuple[List[str], int]]:
+        """Execute multiple commands in parallel"""
+        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+            futures = {executor.submit(self._execute_command, cmd): cmd for cmd in commands}
+            
+            results = []
+            for future in concurrent.futures.as_completed(futures):
+                cmd = futures[future]
+                try:
+                    result = future.result()
+                    results.append((cmd, result))
+                except Exception as e:
+                    self.logger.error(f"Parallel command failed: {cmd}, Error: {e}")
+                    results.append((cmd, 1))
+            
+            return results
 
 
 def main():
