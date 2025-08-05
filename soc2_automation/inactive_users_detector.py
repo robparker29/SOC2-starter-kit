@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 SOC 2 AWS Inactive Users Detection Script
 Maps to SOC 2 Common Criteria: CC6.1, CC6.2, CC6.3
