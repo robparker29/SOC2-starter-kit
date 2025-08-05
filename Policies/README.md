@@ -1,6 +1,8 @@
 # Policy Implementation Guide
 
-This guide provides step-by-step instructions for customizing and implementing the SOC 2 policy templates in your organization. Follow these instructions to create professional, audit-ready policies that match your company's specific needs. **Please note:** These are intended to be starting points for policy creation. Every organization is different and will have different requirements. Please customize these as necessary.
+This guide provides step-by-step instructions for customizing and implementing the SOC 2 policy templates in your organization. Follow these instructions to create professional, audit-ready policies that match your company's specific needs. 
+
+**Please note:** These are intended to be starting points for policy creation. Every organization is different and will have different requirements. Please customize these as necessary.
 
 ## 📋 Prerequisites
 
