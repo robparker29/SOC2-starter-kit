@@ -1,9 +1,26 @@
-# SOC 2 Automation Framework Dependencies
+# SOC 2 Multi-Cloud Automation Framework Dependencies
 # Install with: pip install -r requirements.txt
 
-# Core dependencies
+# AWS Cloud Support
 boto3>=1.26.0          # AWS SDK for Python
 botocore>=1.29.0       # AWS SDK core components
+
+# Azure Cloud Support
+azure-identity>=1.12.0      # Azure authentication
+azure-mgmt-authorization>=3.0.0  # Azure RBAC management
+azure-mgmt-network>=22.0.0       # Azure network management
+azure-mgmt-monitor>=5.0.0        # Azure monitoring
+azure-mgmt-resource>=22.0.0      # Azure resource management
+azure-mgmt-storage>=21.0.0       # Azure storage management
+
+# Google Cloud Platform Support
+google-cloud-iam>=2.11.0         # GCP IAM management
+google-cloud-compute>=1.11.0     # GCP Compute Engine
+google-cloud-logging>=3.5.0      # GCP Cloud Logging
+google-cloud-monitoring>=2.14.0  # GCP Cloud Monitoring
+google-api-python-client>=2.80.0 # Google APIs client
+google-auth>=2.16.0              # Google authentication
+google-auth-oauthlib>=1.0.0      # OAuth2 for Google APIs
 
 # System integrations
 paramiko>=2.11.0       # SSH client for Linux server connections

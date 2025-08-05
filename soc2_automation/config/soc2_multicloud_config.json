@@ -1,0 +1,270 @@
+{
+  "_comment": "SOC 2 Multi-Cloud Configuration Template",
+  "_version": "2.0.0",
+  "_description": "Unified configuration for AWS, Azure, and Google Cloud Platform SOC 2 automation",
+  
+  "global_settings": {
+    "default_cloud_providers": ["aws", "azure", "gcp"],
+    "output_directory": "./soc2_reports",
+    "log_level": "INFO",
+    "parallel_execution": true,
+    "max_concurrent_clouds": 3
+  },
+  
+  "aws": {
+    "_enabled": true,
+    "_comment": "Amazon Web Services configuration",
+    "access_key": "YOUR_AWS_ACCESS_KEY",
+    "secret_key": "YOUR_AWS_SECRET_KEY",
+    "region": "us-east-1",
+    "session_token": null,
+    "profile": null,
+    "accounts": [
+      {
+        "account_id": "123456789012",
+        "account_name": "Production",
+        "role_arn": "arn:aws:iam::123456789012:role/SOC2-CrossAccount-Role",
+        "external_id": "optional-external-id",
+        "regions": ["us-east-1", "us-west-2"]
+      },
+      {
+        "account_id": "210987654321",
+        "account_name": "Development",
+        "role_arn": "arn:aws:iam::210987654321:role/SOC2-CrossAccount-Role",
+        "regions": ["us-east-1"]
+      }
+    ],
+    "services": {
+      "iam": true,
+      "ec2": true,
+      "cloudtrail": true,
+      "config": true,
+      "cloudwatch": true
+    }
+  },
+  
+  "azure": {
+    "_enabled": true,
+    "_comment": "Microsoft Azure configuration",
+    "subscription_id": "YOUR_AZURE_SUBSCRIPTION_ID",
+    "tenant_id": "YOUR_AZURE_TENANT_ID",
+    "client_id": "YOUR_AZURE_CLIENT_ID",
+    "client_secret": "YOUR_AZURE_CLIENT_SECRET",
+    "use_managed_identity": false,
+    "resource_groups": [
+      {
+        "name": "production-rg",
+        "location": "East US"
+      },
+      {
+        "name": "development-rg",
+        "location": "West US 2"
+      }
+    ],
+    "services": {
+      "active_directory": true,
+      "network_security_groups": true,
+      "activity_logs": true,
+      "security_center": true,
+      "key_vault": true
+    }
+  },
+  
+  "gcp": {
+    "_enabled": true,
+    "_comment": "Google Cloud Platform configuration",
+    "project_id": "YOUR_GCP_PROJECT_ID",
+    "service_account_key_path": "/path/to/service-account-key.json",
+    "service_account_email": "soc2-automation@your-project.iam.gserviceaccount.com",
+    "impersonate_service_account": null,
+    "additional_projects": [
+      {
+        "project_id": "dev-project-123",
+        "project_name": "Development"
+      },
+      {
+        "project_id": "staging-project-456",
+        "project_name": "Staging"
+      }
+    ],
+    "services": {
+      "iam": true,
+      "compute": true,
+      "cloud_logging": true,
+      "cloud_monitoring": true,
+      "security_command_center": true
+    }
+  },
+  
+  "active_directory": {
+    "_comment": "On-premises Active Directory configuration",
+    "enabled": true,
+    "server": "ldap://dc.company.com",
+    "port": 389,
+    "use_ssl": true,
+    "user": "soc2-automation@company.com",
+    "password": "YOUR_AD_PASSWORD",
+    "search_base": "dc=company,dc=com",
+    "user_search_filter": "(&(objectClass=user)(objectCategory=person))",
+    "group_search_filter": "(&(objectClass=group))",
+    "additional_attributes": ["manager", "department", "employeeID", "lastLogon"]
+  },
+  
+  "github": {
+    "_comment": "GitHub organization configuration",
+    "enabled": true,
+    "token": "YOUR_GITHUB_TOKEN",
+    "org_name": "your-organization",
+    "enterprise_slug": null,
+    "include_repositories": true,
+    "include_teams": true,
+    "repository_filters": ["public", "private"],
+    "audit_log_enabled": true
+  },
+  
+  "user_access_review": {
+    "_comment": "User access review configuration",
+    "console_threshold_days": 90,
+    "access_key_threshold_days": 180,
+    "excessive_permissions_threshold": 10,
+    "create_tickets": false,
+    "ticket_system": "jira",
+    "exclude_service_accounts": true,
+    "exclude_system_users": ["root", "admin", "service"],
+    "cloud_specific_thresholds": {
+      "aws": {
+        "console_threshold_days": 90,
+        "access_key_threshold_days": 180
+      },
+      "azure": {
+        "inactive_threshold_days": 90,
+        "privileged_threshold_days": 30
+      },
+      "gcp": {
+        "inactive_threshold_days": 90,
+        "service_account_threshold_days": 365
+      }
+    }
+  },
+  
+  "evidence_collection": {
+    "_comment": "Evidence collection configuration",
+    "retention_days": 365,
+    "output_format": ["csv", "json"],
+    "create_tickets": false,
+    "evidence_types": ["ACCESS", "CONFIG", "MONITORING", "CHANGE_MANAGEMENT"],
+    "soc2_controls": ["CC1.4", "CC2.1", "CC3.1", "CC6.1", "CC6.2", "CC6.3", "CC6.7", "CC6.8", "CC7.1", "CC7.2"],
+    "cloud_specific_evidence": {
+      "aws": {
+        "cloudtrail_retention_days": 90,
+        "config_snapshots": true,
+        "security_group_analysis": true
+      },
+      "azure": {
+        "activity_log_retention_days": 90,
+        "nsg_flow_logs": true,
+        "security_center_alerts": true
+      },
+      "gcp": {
+        "audit_log_retention_days": 90,
+        "firewall_logs": true,
+        "security_command_center": true
+      }
+    }
+  },
+  
+  "config_drift": {
+    "_comment": "Configuration drift detection",
+    "enabled": true,
+    "baseline_frequency_hours": 24,
+    "alert_on_critical_changes": true,
+    "monitored_resources": {
+      "aws": ["security_groups", "iam_policies", "s3_buckets"],
+      "azure": ["network_security_groups", "rbac_assignments", "key_vault_policies"],
+      "gcp": ["firewall_rules", "iam_bindings", "service_accounts"]
+    }
+  },
+  
+  "notification_settings": {
+    "_comment": "Notification configuration for findings and alerts",
+    "enabled": true,
+    "email": {
+      "smtp_server": "smtp.company.com",
+      "smtp_port": 587,
+      "username": "soc2-automation@company.com",
+      "password": "YOUR_EMAIL_PASSWORD",
+      "recipients": ["security-team@company.com", "compliance@company.com"]
+    },
+    "slack": {
+      "webhook_url": "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK",
+      "channel": "#security-alerts"
+    },
+    "teams": {
+      "webhook_url": "https://outlook.office.com/webhook/YOUR/TEAMS/WEBHOOK"
+    }
+  },
+  
+  "ticketing_integration": {
+    "_comment": "Integration with ticketing systems for remediation",
+    "enabled": false,
+    "system": "jira",
+    "jira": {
+      "server_url": "https://company.atlassian.net",
+      "username": "soc2-automation@company.com",
+      "api_token": "YOUR_JIRA_API_TOKEN",
+      "project_key": "SEC",
+      "issue_type": "Task",
+      "priority_mapping": {
+        "HIGH": "High",
+        "MEDIUM": "Medium",
+        "LOW": "Low"
+      }
+    },
+    "servicenow": {
+      "instance_url": "https://company.service-now.com",
+      "username": "soc2-automation",
+      "password": "YOUR_SERVICENOW_PASSWORD",
+      "table": "incident"
+    }
+  },
+  
+  "compliance_frameworks": {
+    "_comment": "Additional compliance framework support",
+    "soc2": {
+      "enabled": true,
+      "type": "Type II",
+      "trust_services_criteria": ["CC", "A"]
+    },
+    "iso27001": {
+      "enabled": false,
+      "controls": ["A.9.1.2", "A.9.2.1", "A.12.4.1"]
+    },
+    "pci_dss": {
+      "enabled": false,
+      "requirements": ["8.1", "8.2", "10.1"]
+    }
+  },
+  
+  "advanced_settings": {
+    "_comment": "Advanced configuration options",
+    "api_rate_limiting": {
+      "aws": 100,
+      "azure": 50,
+      "gcp": 100
+    },
+    "timeout_settings": {
+      "connection_timeout": 30,
+      "read_timeout": 60,
+      "retry_attempts": 3
+    },
+    "caching": {
+      "enabled": true,
+      "ttl_minutes": 15,
+      "cache_directory": "./cache"
+    },
+    "encryption": {
+      "encrypt_reports": false,
+      "encryption_key_path": "/path/to/encryption.key"
+    }
+  }
+}

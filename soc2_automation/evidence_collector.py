@@ -17,12 +17,13 @@ from typing import Dict, List, Optional, Any
 from pathlib import Path
 
 from lib.soc2_collectors import SystemDataCollector
+from lib.multicloud_collectors import MultiCloudDataCollector
 from lib.soc2_models import EvidenceItem, UserAccessRecord, SystemConfiguration, serialize_dataclass
 from lib.soc2_utils import SOC2Utils
 
 
-class EvidenceCollector(SystemDataCollector):
-    """Unified evidence collection using SOC 2 automation framework"""
+class EvidenceCollector(MultiCloudDataCollector):
+    """Multi-cloud evidence collection using enhanced SOC 2 automation framework"""
     
     def __init__(self, config_path: str):
         """Initialize evidence collector with configuration"""
@@ -92,23 +93,26 @@ class EvidenceCollector(SystemDataCollector):
         return evidence_items
     
     def _collect_access_evidence(self, controls: List[str]) -> List[EvidenceItem]:
-        """Collect access control evidence (CC6.1, CC6.2, CC6.3)"""
+        """Collect access control evidence from multiple cloud providers (CC6.1, CC6.2, CC6.3)"""
         evidence_items = []
         
-        # Collect user access data from all systems
         try:
-            # AWS users
-            aws_users = self.collect_aws_users(include_permissions=True, include_activity=True)
-            evidence_items.append(self._create_evidence_item(
-                evidence_id=f"ACCESS-AWS-{self.collection_date.strftime('%Y%m%d')}",
-                soc2_control='CC6.1',
-                evidence_type='ACCESS',
-                source_system='AWS IAM',
-                description=f'AWS IAM user access data - {len(aws_users)} users',
-                data_content={'users': [serialize_dataclass(user) for user in aws_users]},
-                audit_relevance='Documents user access controls and permissions in AWS infrastructure'
-            ))
+            # Collect multi-cloud identities
+            all_identities = self.collect_multi_cloud_identities()
             
+            for provider_name, identities in all_identities.items():
+                if identities:  # Only create evidence if we have data
+                    evidence_items.append(self._create_evidence_item(
+                        evidence_id=f"ACCESS-{provider_name.upper()}-{self.collection_date.strftime('%Y%m%d')}",
+                        soc2_control='CC6.1',
+                        evidence_type='ACCESS',
+                        source_system=f'{provider_name.upper()} Identity Management',
+                        description=f'{provider_name.upper()} user access data - {len(identities)} identities',
+                        data_content={'identities': [serialize_dataclass(identity) for identity in identities]},
+                        audit_relevance=f'Documents user access controls and permissions in {provider_name.upper()} infrastructure'
+                    ))
+            
+            # Legacy systems support
             # Active Directory users (if configured)
             if 'active_directory' in self.config:
                 ad_users = self.collect_ad_users(include_groups=True, include_last_login=True)
@@ -141,22 +145,26 @@ class EvidenceCollector(SystemDataCollector):
         return evidence_items
     
     def _collect_config_evidence(self, controls: List[str]) -> List[EvidenceItem]:
-        """Collect system configuration evidence (CC7.1, CC7.2)"""
+        """Collect system configuration evidence from multiple cloud providers (CC7.1, CC7.2)"""
         evidence_items = []
         
         try:
-            # AWS Security Groups
-            aws_security_groups = self.collect_aws_security_groups(detailed_analysis=True)
-            evidence_items.append(self._create_evidence_item(
-                evidence_id=f"CONFIG-AWS-SG-{self.collection_date.strftime('%Y%m%d')}",
-                soc2_control='CC7.1',
-                evidence_type='CONFIG',
-                source_system='AWS EC2',
-                description=f'AWS Security Group configurations - {len(aws_security_groups)} groups',
-                data_content={'security_groups': [serialize_dataclass(sg) for sg in aws_security_groups]},
-                audit_relevance='Documents network security controls and firewall configurations'
-            ))
+            # Collect multi-cloud network security rules
+            all_network_rules = self.collect_multi_cloud_network_rules()
             
+            for provider_name, rules in all_network_rules.items():
+                if rules:  # Only create evidence if we have data
+                    evidence_items.append(self._create_evidence_item(
+                        evidence_id=f"CONFIG-{provider_name.upper()}-NET-{self.collection_date.strftime('%Y%m%d')}",
+                        soc2_control='CC7.1',
+                        evidence_type='CONFIG',
+                        source_system=f'{provider_name.upper()} Network Security',
+                        description=f'{provider_name.upper()} network security rules - {len(rules)} rules',
+                        data_content={'network_rules': [serialize_dataclass(rule) for rule in rules]},
+                        audit_relevance=f'Documents network security controls and firewall configurations in {provider_name.upper()}'
+                    ))
+            
+            # Legacy system support
             # Linux server configurations (if configured)
             if 'linux_servers' in self.config:
                 linux_configs = self.collect_linux_configs(
@@ -178,31 +186,24 @@ class EvidenceCollector(SystemDataCollector):
         return evidence_items
     
     def _collect_monitoring_evidence(self, controls: List[str]) -> List[EvidenceItem]:
-        """Collect monitoring and logging evidence (CC7.2, CC6.7)"""
+        """Collect monitoring and logging evidence from multiple cloud providers (CC7.2, CC6.7)"""
         evidence_items = []
         
         try:
-            # CloudTrail events for security monitoring
-            security_events = [
-                'ConsoleLogin', 'AssumeRole', 'CreateUser', 'DeleteUser',
-                'CreateAccessKey', 'DeleteAccessKey', 'PutBucketPolicy',
-                'CreateSecurityGroup', 'AuthorizeSecurityGroupIngress'
-            ]
+            # Collect multi-cloud audit logs
+            all_audit_logs = self.collect_multi_cloud_audit_logs(time_range_days=30)
             
-            cloudtrail_events = self.collect_cloudtrail_events(
-                event_types=security_events,
-                time_range=30  # Last 30 days
-            )
-            
-            evidence_items.append(self._create_evidence_item(
-                evidence_id=f"MONITOR-CLOUDTRAIL-{self.collection_date.strftime('%Y%m%d')}",
-                soc2_control='CC7.2',
-                evidence_type='MONITORING',
-                source_system='AWS CloudTrail',
-                description=f'CloudTrail security events (30 days) - {len(cloudtrail_events)} events',
-                data_content={'events': cloudtrail_events},
-                audit_relevance='Documents security monitoring and access logging for infrastructure changes'
-            ))
+            for provider_name, audit_logs in all_audit_logs.items():
+                if audit_logs:  # Only create evidence if we have data
+                    evidence_items.append(self._create_evidence_item(
+                        evidence_id=f"MONITOR-{provider_name.upper()}-{self.collection_date.strftime('%Y%m%d')}",
+                        soc2_control='CC7.2',
+                        evidence_type='MONITORING',
+                        source_system=f'{provider_name.upper()} Audit Logging',
+                        description=f'{provider_name.upper()} audit logs (30 days) - {len(audit_logs)} events',
+                        data_content={'audit_logs': [serialize_dataclass(log) for log in audit_logs]},
+                        audit_relevance=f'Documents security monitoring and access logging for {provider_name.upper()} infrastructure changes'
+                    ))
             
         except Exception as e:
             self.logger.error(f"Failed to collect monitoring evidence: {str(e)}")

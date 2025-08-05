@@ -24,6 +24,7 @@ import json
 sys.path.insert(0, str(Path(__file__).parent))
 
 from lib.soc2_utils import SOC2Utils
+from lib.cloud_providers import CloudProviderFactory
 
 
 class SOC2CLI:
@@ -47,21 +48,29 @@ Available Commands:
   config-drift          Detect configuration drift in infrastructure
   
 Examples:
-  soc2-audit user-access-review --config config.json --systems aws github
-  soc2-audit evidence-collection --config config.json --controls CC6.1,CC6.2
-  soc2-audit inactive-users --config config.json --accounts 123456789012
-  soc2-audit config-drift --config config.json
+  soc2-audit user-access-review --config config.json --cloud-providers aws azure
+  soc2-audit evidence-collection --config config.json --controls CC6.1,CC6.2 --cloud-providers gcp
+  soc2-audit inactive-users --config config.json --accounts 123456789012 --cloud-providers aws
+  soc2-audit multi-cloud-assessment --config config.json --parallel
+  soc2-audit config-drift --config config.json --cloud-providers aws azure gcp
             """
         )
         
         # Global arguments
-        parser.add_argument('--version', action='version', version='SOC2 Audit CLI 1.0.0')
+        parser.add_argument('--version', action='version', version='SOC2 Audit CLI 2.0.0 (Multi-Cloud)')
         parser.add_argument('--config', required=True, 
                            help='Path to SOC 2 configuration JSON file')
         parser.add_argument('--output-dir', 
                            help='Custom output directory for all reports')
+        parser.add_argument('--cloud-providers', nargs='*', 
+                           choices=['aws', 'azure', 'gcp'], 
+                           help='Specific cloud providers to target (default: all configured)')
+        parser.add_argument('--accounts', nargs='*',
+                           help='Specific account/subscription/project IDs to analyze')
         parser.add_argument('--verbose', '-v', action='store_true',
                            help='Enable verbose logging')
+        parser.add_argument('--parallel', action='store_true',
+                           help='Execute operations across cloud providers in parallel')
         
         # Create subparsers for different commands
         subparsers = parser.add_subparsers(dest='command', help='Available commands')
@@ -78,6 +87,12 @@ Examples:
         # Configuration Drift command
         self._add_config_drift_parser(subparsers)
         
+        # Multi-Cloud Assessment command
+        self._add_multi_cloud_assessment_parser(subparsers)
+        
+        # Cloud Connectivity Test command
+        self._add_connectivity_test_parser(subparsers)
+        
         return parser
     
     def _add_user_access_review_parser(self, subparsers):
@@ -88,7 +103,7 @@ Examples:
             description='Analyze user access across AWS, Active Directory, and GitHub'
         )
         parser.add_argument('--systems', nargs='*', 
-                          choices=['aws', 'active_directory', 'github'],
+                          choices=['aws', 'azure', 'gcp', 'active_directory', 'github'],
                           help='Systems to include in review (default: all configured)')
         parser.add_argument('--accounts', nargs='*',
                           help='Specific AWS account IDs to analyze')
@@ -236,6 +251,67 @@ Examples:
             cmd.extend(['--output-dir', args.output_dir])
         
         return self._execute_command(cmd)
+    
+    def _add_multi_cloud_assessment_parser(self, subparsers):
+        """Add multi-cloud assessment subcommand"""
+        parser = subparsers.add_parser(
+            'multi-cloud-assessment',
+            help='Run comprehensive multi-cloud security assessment',
+            description='Analyze security posture across AWS, Azure, and GCP simultaneously'
+        )
+        parser.add_argument('--assessment-types', nargs='*',
+                          choices=['access_review', 'network_security', 'compliance_check', 'drift_detection'],
+                          help='Types of assessments to run (default: all)')
+        parser.add_argument('--generate-cross-cloud-report', action='store_true',
+                          help='Generate unified report spanning all cloud providers')
+        parser.set_defaults(func=self._run_multi_cloud_assessment)
+    
+    def _add_connectivity_test_parser(self, subparsers):
+        """Add connectivity test subcommand"""
+        parser = subparsers.add_parser(
+            'test-connectivity',
+            help='Test connectivity to all configured cloud providers',
+            description='Validate authentication and API connectivity across cloud providers'
+        )
+        parser.set_defaults(func=self._run_connectivity_test)
+    
+    def _run_multi_cloud_assessment(self, args):
+        """Execute comprehensive multi-cloud assessment"""
+        self.logger.info("🌐 Running multi-cloud security assessment...")
+        
+        # This would be implemented to use the cloud provider factory
+        # and run assessments across all configured cloud providers
+        print("Multi-cloud assessment functionality will be implemented with full cloud provider integration")
+        return 0
+    
+    def _run_connectivity_test(self, args):
+        """Test connectivity to cloud providers"""
+        self.logger.info("🔗 Testing cloud provider connectivity...")
+        
+        try:
+            config = SOC2Utils.load_json_config(args.config)
+            providers = CloudProviderFactory.create_multi_cloud_session(config, self.logger)
+            
+            print(f"\n🌐 Cloud Provider Connectivity Test")
+            print(f"=" * 50)
+            
+            for provider_name, provider in providers.items():
+                print(f"\n{provider_name}:")
+                connectivity_results = provider.validate_connectivity()
+                
+                for service, status in connectivity_results.items():
+                    status_icon = "✅" if status else "❌"
+                    print(f"  {status_icon} {service}: {'Connected' if status else 'Failed'}")
+            
+            # Print available providers
+            available = CloudProviderFactory.get_available_providers()
+            print(f"\n📦 Available Providers (SDKs installed): {', '.join(available)}")
+            
+            return 0
+            
+        except Exception as e:
+            self.logger.error(f"Connectivity test failed: {str(e)}")
+            return 1
     
     def _execute_command(self, cmd):
         """Execute a command and handle the result"""
