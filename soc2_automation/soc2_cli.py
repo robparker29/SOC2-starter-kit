@@ -19,6 +19,10 @@ import os
 from pathlib import Path
 import subprocess
 import json
+import logging
+from logging.handlers import RotatingFileHandler
+import concurrent.futures
+from typing import List, Dict, Any, Tuple
 
 # Add the current directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent))
@@ -27,12 +31,19 @@ from lib.soc2_utils import SOC2Utils
 from lib.cloud_providers import CloudProviderFactory
 
 
+class SecurityError(Exception):
+    """Raised when security validation fails"""
+    pass
+
+
 class SOC2CLI:
     """Unified CLI for SOC 2 audit automation"""
     
     def __init__(self):
         self.base_dir = Path(__file__).parent
         self.logger = SOC2Utils.setup_logging()
+        self.max_command_timeout = 300  # 5 minutes
+        self.allowed_executables = [sys.executable, 'python', 'python3']
     
     def create_parser(self):
         """Create the main argument parser with subcommands"""
@@ -275,7 +286,7 @@ Examples:
         )
         parser.set_defaults(func=self._run_connectivity_test)
     
-    def _run_multi_cloud_assessment(self, args):
+    def _run_multi_cloud_assessment(self, _args):
         """Execute comprehensive multi-cloud assessment"""
         self.logger.info("🌐 Running multi-cloud security assessment...")
         
