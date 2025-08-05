@@ -4,7 +4,7 @@ This guide provides step-by-step instructions for customizing and implementing t
 
 **Please note:** These are intended to be starting points for policy creation. Every organization is different and will have different requirements. Please customize these as necessary.
 
-I have provided templates for what I believe to be the top 10 priority policies. For a list of important, but lower priority, policies please review (SOC2 Policy Templates - Control Mapping)[put link here]
+I have provided templates for what I believe to be the top 10 priority policies. For a list of important, but lower priority, policies please review [SOC2 Policy Templates - Control Mapping](https://github.com/robparker29/SOC2-starter-kit/blob/cc95fd37cea1f3ccd4e19dc8e2f34077e795d0b3/Policies/SOC2%20Policy%20Templates%20-%20Control%20Mapping.md)
 
 ## 📋 Prerequisites
 
