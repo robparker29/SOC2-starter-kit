@@ -16,7 +16,11 @@
       "Bash(time:*)",
       "WebFetch(domain:www.hicomply.com)",
       "Bash(find:*)",
-      "Bash(test:*)"
+      "Bash(test:*)",
+      "Bash(cat:*)",
+      "Bash(ls:*)",
+      "Bash(pip install:*)",
+      "Bash(mv:*)"
     ],
     "deny": []
   }
