@@ -235,6 +235,145 @@ class AccessReviewFinding:
     created_date: datetime.datetime
     status: str = 'OPEN'                          # 'OPEN', 'IN_PROGRESS', 'RESOLVED'
 
+@dataclass
+class DatabaseSecurityEvidence:
+    """Database security evidence for SOC 2 compliance"""
+    database_id: str
+    database_name: str
+    database_type: str                            # 'PostgreSQL', 'MySQL', 'MongoDB', 'RDS', 'Azure SQL', etc.
+    cloud_provider: Optional[str]                 # 'AWS', 'AZURE', 'GCP' for cloud databases, None for on-premise
+    host_location: str
+    encryption_at_rest: bool
+    encryption_in_transit: bool
+    encryption_key_management: str                # How encryption keys are managed
+    audit_logging_enabled: bool
+    audit_log_location: str
+    backup_encryption: bool
+    access_control_method: str                    # 'RBAC', 'IAM', 'Native', etc.
+    user_privileges: List[Dict[str, Any]]         # List of user privilege information
+    network_isolation: bool
+    ssl_tls_enforced: bool
+    password_policy_enforced: bool
+    multi_factor_auth_required: bool
+    compliance_findings: List[str]
+    soc2_controls: List[str]                      # ['CC6.1', 'CC6.2', 'CC6.7']
+    evidence_date: datetime.datetime
+    evidence_source: str                          # 'CONFIG_FILE', 'AUDIT_LOG', 'CLOUD_API'
+    
+    def __post_init__(self):
+        if self.user_privileges is None:
+            self.user_privileges = []
+        if self.compliance_findings is None:
+            self.compliance_findings = []
+        if self.soc2_controls is None:
+            self.soc2_controls = []
+
+@dataclass
+class NetworkSecurityEvidence:
+    """Network security configuration evidence"""
+    rule_id: str
+    rule_name: str
+    resource_id: str                              # Security group, firewall, NSG ID
+    cloud_provider: str                           # 'AWS', 'AZURE', 'GCP'
+    account_id: str
+    region: str
+    rule_type: str                                # 'SECURITY_GROUP', 'FIREWALL', 'NSG', 'NACL'
+    direction: str                                # 'INBOUND', 'OUTBOUND'
+    protocol: str                                 # 'TCP', 'UDP', 'ICMP', 'ALL'
+    port_range: str                               # '80', '443', '22-80', 'ALL'
+    source: str                                   # IP ranges, security group IDs, etc.
+    destination: str
+    action: str                                   # 'ALLOW', 'DENY'
+    priority: Optional[int]
+    description: str
+    network_segmentation_purpose: str            # Purpose of this rule for network segmentation
+    compliance_risk_level: str                   # 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL'
+    soc2_controls: List[str]                      # ['CC6.7', 'CC7.1']
+    created_date: Optional[datetime.datetime]
+    last_modified: Optional[datetime.datetime]
+    evidence_date: datetime.datetime
+    metadata: Dict[str, Any] = None
+    
+    def __post_init__(self):
+        if self.metadata is None:
+            self.metadata = {}
+        if self.soc2_controls is None:
+            self.soc2_controls = []
+
+@dataclass
+class VendorAccessEvidence:
+    """Third-party and vendor access evidence"""
+    vendor_id: str
+    vendor_name: str
+    integration_type: str                         # 'API', 'SSO', 'VPN', 'DIRECT_ACCESS', 'SERVICE_ACCOUNT'
+    access_method: str                            # How vendor accesses systems
+    access_scope: List[str]                       # Systems/data they can access
+    access_permissions: List[str]                 # Specific permissions granted
+    authentication_method: str                    # 'API_KEY', 'OAUTH', 'SAML', 'USERNAME_PASSWORD'
+    multi_factor_auth_required: bool
+    access_logging_enabled: bool
+    access_log_location: str
+    data_access_agreement: bool                   # Whether DPA/BAA is in place
+    security_assessment_date: Optional[datetime.datetime]
+    access_review_frequency: str                  # 'MONTHLY', 'QUARTERLY', 'ANNUALLY'
+    last_access_review: Optional[datetime.datetime]
+    access_expiration_date: Optional[datetime.datetime]
+    emergency_access_procedure: bool              # Whether emergency access procedures exist
+    compliance_status: str                        # 'COMPLIANT', 'NON_COMPLIANT', 'NEEDS_REVIEW'
+    risk_level: str                               # 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL'
+    findings: List[str]                           # Compliance issues found
+    soc2_controls: List[str]                      # ['CC9.1', 'CC9.2']
+    evidence_date: datetime.datetime
+    next_review_due: Optional[datetime.datetime]
+    
+    def __post_init__(self):
+        if self.access_scope is None:
+            self.access_scope = []
+        if self.access_permissions is None:
+            self.access_permissions = []
+        if self.findings is None:
+            self.findings = []
+        if self.soc2_controls is None:
+            self.soc2_controls = []
+
+@dataclass
+class ConsolidatedEvidenceReport:
+    """Master evidence report combining all collection results"""
+    report_id: str
+    report_date: datetime.datetime
+    reporting_period_start: datetime.datetime
+    reporting_period_end: datetime.datetime
+    organization_name: str
+    environment: str                              # 'PRODUCTION', 'STAGING', 'DEVELOPMENT'
+    evidence_summary: Dict[str, int]              # Count of evidence items by type
+    database_evidence: List[DatabaseSecurityEvidence]
+    network_evidence: List[NetworkSecurityEvidence]
+    vendor_evidence: List[VendorAccessEvidence]
+    soc2_control_coverage: Dict[str, List[str]]   # Control -> evidence types mapping
+    compliance_gaps: List[str]                    # Areas needing attention
+    recommendations: List[str]                    # Recommended actions
+    evidence_collection_status: Dict[str, str]    # Status of each collection type
+    total_evidence_items: int
+    report_completeness: str                      # 'COMPLETE', 'PARTIAL', 'INCOMPLETE'
+    
+    def __post_init__(self):
+        if self.database_evidence is None:
+            self.database_evidence = []
+        if self.network_evidence is None:
+            self.network_evidence = []
+        if self.vendor_evidence is None:
+            self.vendor_evidence = []
+        if self.evidence_summary is None:
+            self.evidence_summary = {}
+        if self.soc2_control_coverage is None:
+            self.soc2_control_coverage = {}
+        if self.compliance_gaps is None:
+            self.compliance_gaps = []
+        if self.recommendations is None:
+            self.recommendations = []
+        if self.evidence_collection_status is None:
+            self.evidence_collection_status = {}
+
 # Utility functions for data models
 def serialize_dataclass(obj) -> Dict:
     """Convert dataclass to dictionary with datetime handling"""
@@ -249,6 +388,104 @@ def serialize_dataclass(obj) -> Dict:
         data[key] = convert_datetime(value)
     
     return data
+
+@dataclass
+class ChangeManagementEvidence:
+    """Change management evidence for SOC 2 compliance"""
+    change_id: str
+    change_title: str
+    change_type: str                              # 'CODE', 'INFRASTRUCTURE', 'CONFIGURATION', 'SECURITY'
+    change_category: str                          # 'EMERGENCY', 'STANDARD', 'PRE_APPROVED'
+    requester: str
+    approver: str
+    implementation_date: datetime.datetime
+    change_description: str
+    business_justification: str
+    risk_assessment: str                          # 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL'
+    rollback_plan: bool
+    testing_evidence: List[str]                   # Links to test results
+    approval_workflow: List[Dict[str, Any]]       # Approval chain with timestamps
+    deployment_method: str                        # 'AUTOMATED', 'MANUAL', 'HYBRID'
+    environment_target: str                       # 'PRODUCTION', 'STAGING', 'DEVELOPMENT'
+    systems_affected: List[str]
+    downtime_required: bool
+    scheduled_downtime_duration: Optional[str]
+    success_criteria: List[str]
+    post_implementation_review: bool
+    change_status: str                            # 'PENDING', 'APPROVED', 'IMPLEMENTED', 'FAILED', 'ROLLED_BACK'
+    compliance_findings: List[str]
+    soc2_controls: List[str]                      # ['CC8.1']
+    evidence_date: datetime.datetime
+    evidence_source: str                          # 'CHANGE_MGMT_SYSTEM', 'TICKETING_SYSTEM', 'VERSION_CONTROL'
+    
+    def __post_init__(self):
+        if self.testing_evidence is None:
+            self.testing_evidence = []
+        if self.approval_workflow is None:
+            self.approval_workflow = []
+        if self.systems_affected is None:
+            self.systems_affected = []
+        if self.success_criteria is None:
+            self.success_criteria = []
+        if self.compliance_findings is None:
+            self.compliance_findings = []
+        if self.soc2_controls is None:
+            self.soc2_controls = []
+
+@dataclass
+class IncidentResponseEvidence:
+    """Security incident response evidence for SOC 2 compliance"""
+    incident_id: str
+    incident_title: str
+    incident_type: str                            # 'SECURITY_BREACH', 'DATA_BREACH', 'SYSTEM_OUTAGE', 'MALWARE'
+    severity_level: str                           # 'CRITICAL', 'HIGH', 'MEDIUM', 'LOW'
+    detection_date: datetime.datetime
+    detection_method: str                         # 'AUTOMATED_ALERT', 'USER_REPORT', 'AUDIT_FINDING'
+    initial_responder: str
+    incident_commander: str
+    affected_systems: List[str]
+    affected_data_types: List[str]                # 'CUSTOMER_DATA', 'EMPLOYEE_DATA', 'FINANCIAL_DATA'
+    potential_impact: str
+    containment_actions: List[Dict[str, Any]]     # Actions taken with timestamps
+    eradication_actions: List[Dict[str, Any]]
+    recovery_actions: List[Dict[str, Any]]
+    communication_log: List[Dict[str, Any]]       # Internal and external communications
+    regulatory_notifications: List[Dict[str, Any]] # Breach notifications to authorities
+    customer_notifications: bool
+    incident_status: str                          # 'OPEN', 'CONTAINED', 'ERADICATED', 'RECOVERED', 'CLOSED'
+    resolution_date: Optional[datetime.datetime]
+    total_resolution_time: Optional[str]          # Duration from detection to resolution
+    root_cause_analysis: str
+    lessons_learned: List[str]
+    preventive_measures: List[str]
+    compliance_findings: List[str]
+    soc2_controls: List[str]                      # ['CC7.3', 'CC7.4', 'CC7.5']
+    evidence_date: datetime.datetime
+    evidence_source: str                          # 'INCIDENT_MGMT_SYSTEM', 'SIEM', 'SECURITY_LOGS'
+    
+    def __post_init__(self):
+        if self.affected_systems is None:
+            self.affected_systems = []
+        if self.affected_data_types is None:
+            self.affected_data_types = []
+        if self.containment_actions is None:
+            self.containment_actions = []
+        if self.eradication_actions is None:
+            self.eradication_actions = []
+        if self.recovery_actions is None:
+            self.recovery_actions = []
+        if self.communication_log is None:
+            self.communication_log = []
+        if self.regulatory_notifications is None:
+            self.regulatory_notifications = []
+        if self.lessons_learned is None:
+            self.lessons_learned = []
+        if self.preventive_measures is None:
+            self.preventive_measures = []
+        if self.compliance_findings is None:
+            self.compliance_findings = []
+        if self.soc2_controls is None:
+            self.soc2_controls = []
 
 def deserialize_datetime(date_string: str) -> datetime.datetime:
     """Convert ISO datetime string back to datetime object"""

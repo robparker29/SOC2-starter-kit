@@ -1,0 +1,25 @@
+{
+  "id": "evidence-collection-scripts",
+  "started": "2025-08-05T15:20:00Z",
+  "lastUpdated": "2025-08-05T15:20:00Z",
+  "status": "active",
+  "phase": "complete",
+  "progress": {
+    "discovery": { "answered": 5, "total": 5 },
+    "detail": { "answered": 5, "total": 5 }
+  },
+  "contextFiles": [
+    "soc2_automation/soc2_cli.py",
+    "soc2_automation/evidence_collector.py", 
+    "soc2_automation/lib/soc2_collectors.py",
+    "soc2_automation/lib/multicloud_collectors.py",
+    "soc2_automation/lib/soc2_models.py",
+    "soc2_automation/lib/cloud_providers.py",
+    "soc2_automation/config/soc2_unified_config.json"
+  ],
+  "relatedFeatures": [
+    "evidence_collector.py",
+    "inactive_users_detector.py ticket creation",
+    "multicloud_collectors.py parallel execution"
+  ]
+}

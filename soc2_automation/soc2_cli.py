@@ -104,6 +104,9 @@ Examples:
         # Cloud Connectivity Test command
         self._add_connectivity_test_parser(subparsers)
         
+        # Master Evidence Orchestrator command
+        self._add_master_orchestrator_parser(subparsers)
+        
         return parser
     
     def _add_user_access_review_parser(self, subparsers):
@@ -155,7 +158,8 @@ Examples:
         parser.add_argument('--controls', nargs='*',
                           help='Specific SOC 2 controls to collect evidence for')
         parser.add_argument('--evidence-types', nargs='*',
-                          choices=['ACCESS', 'CONFIG', 'MONITORING', 'CHANGE_MANAGEMENT'],
+                          choices=['ACCESS', 'CONFIG', 'MONITORING', 'CHANGE_MANAGEMENT',
+                                  'DATABASE_SECURITY', 'NETWORK_SECURITY', 'VENDOR_ACCESS'],
                           help='Types of evidence to collect')
         parser.set_defaults(func=self._run_evidence_collection)
     
@@ -286,6 +290,24 @@ Examples:
         )
         parser.set_defaults(func=self._run_connectivity_test)
     
+    def _add_master_orchestrator_parser(self, subparsers):
+        """Add master evidence orchestrator subcommand"""
+        parser = subparsers.add_parser(
+            'master-evidence-orchestrator',
+            help='Run comprehensive evidence collection orchestration',
+            description='Coordinate all evidence collection scripts and generate consolidated report'
+        )
+        parser.add_argument('--environment', 
+                          choices=['production', 'staging', 'development'],
+                          default='production',
+                          help='Target environment for evidence collection')
+        parser.add_argument('--exclude-types', nargs='*',
+                          choices=['DATABASE_SECURITY', 'NETWORK_SECURITY', 'VENDOR_ACCESS'],
+                          help='Evidence types to exclude from collection')
+        parser.add_argument('--report-name',
+                          help='Custom name for the consolidated report')
+        parser.set_defaults(func=self._run_master_orchestrator)
+    
     def _run_multi_cloud_assessment(self, _args):
         """Execute comprehensive multi-cloud assessment"""
         self.logger.info("🌐 Running multi-cloud security assessment...")
@@ -323,6 +345,31 @@ Examples:
         except Exception as e:
             self.logger.error(f"Connectivity test failed: {str(e)}")
             return 1
+    
+    def _run_master_orchestrator(self, args):
+        """Execute master evidence orchestrator"""
+        self.logger.info("🎯 Running master evidence orchestration...")
+        
+        cmd = [
+            sys.executable,
+            str(self.base_dir / 'master_evidence_orchestrator.py'),
+            '--config', args.config
+        ]
+        
+        if args.environment:
+            cmd.extend(['--environment', args.environment])
+        if args.exclude_types:
+            cmd.extend(['--exclude-types'] + args.exclude_types)
+        if args.report_name:
+            cmd.extend(['--report-name', args.report_name])
+        if args.output_dir:
+            cmd.extend(['--output-dir', args.output_dir])
+        if args.cloud_providers:
+            cmd.extend(['--cloud-providers'] + args.cloud_providers)
+        if args.parallel:
+            cmd.append('--parallel')
+        
+        return self._execute_command(cmd)
     
     def _execute_command(self, cmd: List[str]) -> int:
         """Execute a command and handle the result with security validation"""
