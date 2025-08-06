@@ -14,7 +14,9 @@
       "Bash(python -m pylint:*)",
       "Bash(python:*)",
       "Bash(time:*)",
-      "WebFetch(domain:www.hicomply.com)"
+      "WebFetch(domain:www.hicomply.com)",
+      "Bash(find:*)",
+      "Bash(test:*)"
     ],
     "deny": []
   }
