@@ -1,0 +1,13 @@
+{
+  "id": "soc2-starter-kit-documentation",
+  "started": "2025-01-24T11:30:00Z",
+  "lastUpdated": "2025-01-24T11:30:00Z",
+  "status": "active",
+  "phase": "complete",
+  "progress": {
+    "discovery": { "answered": 5, "total": 5 },
+    "detail": { "answered": 5, "total": 5 }
+  },
+  "contextFiles": [],
+  "relatedFeatures": ["SOC 2 readiness assessment", "gap analysis", "remediation tools"]
+}
