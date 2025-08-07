@@ -1376,14 +1376,10 @@
 
         function displayMaturityLevel(maturityLevel, score) {
             const levelElement = document.getElementById('maturityLevel');
-            const titleElement = document.getElementById('maturityTitle');
-            const descriptionElement = document.getElementById('maturityDescription');
+            levelElement.className = `maturity-level level-${maturityLevel.level}`;
             
-            if (levelElement && titleElement && descriptionElement) {
-                levelElement.className = `maturity-level level-${maturityLevel.level}`;
-                titleElement.textContent = `Level ${maturityLevel.level}: ${maturityLevel.name}`;
-                descriptionElement.textContent = `${maturityLevel.description} (Overall Score: ${score.toFixed(1)}/5.0)`;
-            }
+            document.getElementById('maturityTitle').textContent = `Level ${maturityLevel.level}: ${maturityLevel.name}`;
+            document.getElementById('maturityDescription').textContent = `${maturityLevel.description} (Overall Score: ${score.toFixed(1)}/5.0)`;
         }
 
         function displayScoreBreakdown(scores) {
