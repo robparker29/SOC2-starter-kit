@@ -1,0 +1,1881 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOC 2 Readiness Assessment Tool</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            color: #7f8c8d;
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .progress-section {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #ecf0f1;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3498db, #2ecc71);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .assessment-content {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .question-section {
+            margin-bottom: 30px;
+        }
+
+        .question-section.hidden {
+            display: none;
+        }
+
+        .section-header {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        .section-header h2 {
+            font-size: 1.8rem;
+            margin-bottom: 5px;
+        }
+
+        .section-header p {
+            opacity: 0.9;
+            font-size: 1rem;
+        }
+
+        .question {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border-left: 4px solid #3498db;
+            transition: all 0.3s ease;
+        }
+
+        .question:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .question h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+
+        .question-description {
+            color: #7f8c8d;
+            margin-bottom: 20px;
+            font-style: italic;
+        }
+
+        .options {
+            display: grid;
+            gap: 10px;
+        }
+
+        .option {
+            background: white;
+            border: 2px solid #ecf0f1;
+            padding: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .option:hover {
+            border-color: #3498db;
+            transform: translateX(5px);
+        }
+
+        .option.selected {
+            border-color: #2ecc71;
+            background: #d5f4e6;
+        }
+
+        .option input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+        }
+
+        .option-score {
+            float: right;
+            background: #3498db;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .navigation {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(52, 152, 219, 0.3);
+        }
+
+        .btn:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+        }
+
+        .results-section {
+            display: none;
+            animation: fadeInUp 0.6s ease;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .maturity-level {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 30px;
+            box-shadow: 0 15px 30px rgba(231, 76, 60, 0.3);
+        }
+
+        .maturity-level.level-2 {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            box-shadow: 0 15px 30px rgba(243, 156, 18, 0.3);
+        }
+
+        .maturity-level.level-3 {
+            background: linear-gradient(135deg, #f1c40f, #f39c12);
+            box-shadow: 0 15px 30px rgba(241, 196, 15, 0.3);
+        }
+
+        .maturity-level.level-4 {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            box-shadow: 0 15px 30px rgba(46, 204, 113, 0.3);
+        }
+
+        .maturity-level.level-5 {
+            background: linear-gradient(135deg, #9b59b6, #8e44ad);
+            box-shadow: 0 15px 30px rgba(155, 89, 182, 0.3);
+        }
+
+        .maturity-level h2 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .maturity-level p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .score-breakdown {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .score-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .score-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .score-card h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+
+        .score-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .score-value.security { color: #3498db; }
+        .score-value.availability { color: #2ecc71; }
+        .score-value.processing { color: #f39c12; }
+        .score-value.confidentiality { color: #e74c3c; }
+        .score-value.privacy { color: #9b59b6; }
+
+        .recommendations {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .recommendations h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .priority-section {
+            margin-bottom: 25px;
+        }
+
+        .priority-header {
+            background: #e74c3c;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .priority-header.high { background: #f39c12; }
+        .priority-header.medium { background: #2ecc71; }
+        .priority-header.low { background: #95a5a6; }
+
+        .recommendation-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 4px solid #3498db;
+        }
+
+        .recommendation-item h4 {
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+
+        .recommendation-item p {
+            color: #7f8c8d;
+            margin-bottom: 8px;
+        }
+
+        .timeline {
+            font-weight: bold;
+            color: #e74c3c;
+        }
+
+        .export-section {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .export-section h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+
+        .export-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .industry-selector {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .industry-selector h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+
+        .industry-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+        }
+
+        .industry-option {
+            background: #f8f9fa;
+            border: 2px solid #ecf0f1;
+            padding: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .industry-option:hover {
+            border-color: #3498db;
+            background: #e3f2fd;
+        }
+
+        .industry-option.selected {
+            border-color: #2ecc71;
+            background: #d5f4e6;
+        }
+
+        .company-size-selector {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .size-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .navigation {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .export-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🔐 SOC 2 Readiness Assessment</h1>
+            <p>Evaluate your organization's current SOC 2 compliance readiness and receive a personalized roadmap to certification</p>
+        </div>
+
+        <!-- Progress Section -->
+        <div class="progress-section">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-text">
+                <span id="progressText">Getting Started</span>
+                <span id="progressPercent">0%</span>
+            </div>
+        </div>
+
+        <!-- Assessment Content -->
+        <div class="assessment-content">
+            <!-- Industry & Company Size Selection -->
+            <div class="question-section" id="section-0">
+                <div class="section-header">
+                    <h2>🏢 Organization Profile</h2>
+                    <p>Help us customize the assessment to your specific context</p>
+                </div>
+
+                <div class="industry-selector">
+                    <h3>Select Your Industry</h3>
+                    <div class="industry-options">
+                        <div class="industry-option" data-industry="saas">
+                            <strong>SaaS/Technology</strong><br>
+                            <small>Cloud-based software and services</small>
+                        </div>
+                        <div class="industry-option" data-industry="financial">
+                            <strong>Financial Services</strong><br>
+                            <small>Banking, fintech, investment</small>
+                        </div>
+                        <div class="industry-option" data-industry="healthcare">
+                            <strong>Healthcare</strong><br>
+                            <small>Medical, biotech, health services</small>
+                        </div>
+                        <div class="industry-option" data-industry="manufacturing">
+                            <strong>Manufacturing</strong><br>
+                            <small>Industrial, production, supply chain</small>
+                        </div>
+                        <div class="industry-option" data-industry="other">
+                            <strong>Other</strong><br>
+                            <small>Professional services, retail, etc.</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="company-size-selector">
+                    <h3>Company Size</h3>
+                    <div class="size-options">
+                        <div class="industry-option" data-size="startup">
+                            <strong>Startup</strong><br>
+                            <small>1-25 employees</small>
+                        </div>
+                        <div class="industry-option" data-size="small">
+                            <strong>Small</strong><br>
+                            <small>26-100 employees</small>
+                        </div>
+                        <div class="industry-option" data-size="medium">
+                            <strong>Medium</strong><br>
+                            <small>101-500 employees</small>
+                        </div>
+                        <div class="industry-option" data-size="large">
+                            <strong>Large</strong><br>
+                            <small>500+ employees</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Security Questions (CC1-CC9) -->
+            <div class="question-section hidden" id="section-1">
+                <div class="section-header">
+                    <h2>🛡️ Security Foundation</h2>
+                    <p>Evaluating your organization's security governance, risk management, and control activities</p>
+                </div>
+
+                <div class="question" data-control="CC1">
+                    <h3>Security Governance & Leadership</h3>
+                    <p class="question-description">How mature is your organization's security governance and executive commitment?</p>
+                    <div class="options">
+                        <label class="option">
+                            <input type="radio" name="security-governance" value="1">
+                            <span>No formal security governance; ad-hoc security measures</span>
+                            <span class="option-score">1</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="security-governance" value="2">
+                            <span>Basic security policies exist; limited executive oversight</span>
+                            <span class="option-score">2</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="security-governance" value="3">
+                            <span>Documented security program; regular executive reviews</span>
+                            <span class="option-score">3</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="security-governance" value="4">
+                            <span>Comprehensive security framework; board-level oversight</span>
+                            <span class="option-score">4</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="security-governance" value="5">
+                            <span>Mature security governance; continuous improvement culture</span>
+                            <span class="option-score">5</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="question" data-control="CC3">
+                    <h3>Risk Management Program</h3>
+                    <p class="question-description">How comprehensive is your risk identification and management process?</p>
+                    <div class="options">
+                        <label class="option">
+                            <input type="radio" name="risk-management" value="1">
+                            <span>No formal risk assessment process</span>
+                            <span class="option-score">1</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="risk-management" value="2">
+                            <span>Basic risk identification; informal tracking</span>
+                            <span class="option-score">2</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="risk-management" value="3">
+                            <span>Annual risk assessments; documented risk register</span>
+                            <span class="option-score">3</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="risk-management" value="4">
+                            <span>Quarterly risk reviews; treatment plans tracked</span>
+                            <span class="option-score">4</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="risk-management" value="5">
+                            <span>Continuous risk monitoring; integrated with business processes</span>
+                            <span class="option-score">5</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="question" data-control="CC6">
+                    <h3>Access Control Management</h3>
+                    <p class="question-description">How well do you manage user access to systems and data?</p>
+                    <div class="options">
+                        <label class="option">
+                            <input type="radio" name="access-control" value="1">
+                            <span>Shared accounts; no formal access management</span>
+                            <span class="option-score">1</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="access-control" value="2">
+                            <span>Individual accounts; manual provisioning</span>
+                            <span class="option-score">2</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="access-control" value="3">
+                            <span>Role-based access; regular access reviews</span>
+                            <span class="option-score">3</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="access-control" value="4">
+                            <span>Automated provisioning; MFA implemented</span>
+                            <span class="option-score">4</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="access-control" value="5">
+                            <span>Zero-trust architecture; continuous access monitoring</span>
+                            <span class="option-score">5</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="question" data-control="CC7">
+                    <h3>Security Monitoring & Incident Response</h3>
+                    <p class="question-description">How effective is your security monitoring and incident response capability?</p>
+                    <div class="options">
+                        <label class="option">
+                            <input type="radio" name="monitoring" value="1">
+                            <span>No security monitoring; reactive incident handling</span>
+                            <span class="option-score">1</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="monitoring" value="2">
+                            <span>Basic logging; informal incident response</span>
+                            <span class="option-score">2</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="monitoring" value="3">
+                            <span>SIEM deployed; documented incident procedures</span>
+                            <span class="option-score">3</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="monitoring" value="4">
+                            <span>24/7 monitoring; tested incident response plan</span>
+                            <span class="option-score">4</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="monitoring" value="5">
+                            <span>Advanced threat detection; automated response capabilities</span>
+                            <span class="option-score">5</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="question" data-control="CC8">
+                    <h3>Change Management</h3>
+                    <p class="question-description">How well do you manage changes to systems and applications?</p>
+                    <div class="options">
+                        <label class="option">
+                            <input type="radio" name="change-management" value="1">
+                            <span>No formal change process; ad-hoc deployments</span>
+                            <span class="option-score">1</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="change-management" value="2">
+                            <span>Basic change documentation; manual approvals</span>
+                            <span class="option-score">2</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="change-management" value="3">
+                            <span>Change advisory board; documented procedures</span>
+                            <span class="option-score">3</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="change-management" value="4">
+                            <span>Automated change workflows; testing requirements</span>
+                            <span class="option-score">4</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="change-management" value="5">
+                            <span>DevOps integration; continuous deployment with controls</span>
+                            <span class="option-score">5</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Availability Questions (A1) -->
+            <div class="question-section hidden" id="section-2">
+                <div class="section-header">
+                    <h2>⚡ System Availability</h2>
+                    <p>Assessing your organization's ability to maintain system availability and business continuity</p>
+                </div>
+
+                <div class="question" data-control="A1">
+                    <h3>Business Continuity & Disaster Recovery</h3>
+                    <p class="question-description">How prepared is your organization for business disruptions?</p>
+                    <div class="options">
+                        <label class="option">
+                            <input type="radio" name="business-continuity" value="1">
+                            <span>No business continuity planning; manual backups</span>
+                            <span class="option-score">1</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="business-continuity" value="2">
+                            <span>Basic backup procedures; informal recovery plans</span>
+                            <span class="option-score">2</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="business-continuity" value="3">
+                            <span>Documented BC/DR plans; annual testing</span>
+                            <span class="option-score">3</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="business-continuity" value="4">
+                            <span>Tested recovery procedures; RTO/RPO defined</span>
+                            <span class="option-score">4</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="business-continuity" value="5">
+                            <span>Automated failover; regularly tested and updated plans</span>
+                            <span class="option-score">5</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="question" data-control="A1">
+                    <h3>System Performance & Capacity Management</h3>
+                    <p class="question-description">How well do you monitor and manage system performance?</p>
+                    <div class="options">
+                        <label class="option">
+                            <input type="radio" name="performance" value="1">
+                            <span>No performance monitoring; reactive scaling</span>
+                            <span class="option-score">1</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="performance" value="2">
+                            <span>Basic monitoring; manual capacity planning</span>
+                            <span class="option-score">2</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="performance" value="3">
+                            <span>Performance dashboards; capacity reviews</span>
+                            <span class="option-score">3</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="performance" value="4">
+                            <span>Automated monitoring; proactive capacity planning</span>
+                            <span class="option-score">4</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="performance" value="5">
+                            <span>Auto-scaling; predictive capacity management</span>
+                            <span class="option-score">5</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Processing Integrity Questions (PI1) -->
+            <div class="question-section hidden" id="section-3">
+                <div class="section-header">
+                    <h2>🔄 Processing Integrity</h2>
+                    <p>Evaluating the accuracy and completeness of your data processing</p>
+                </div>
+
+                <div class="question" data-control="PI1">
+                    <h3>Error Detection & Correction</h3>
+                    <p class="question-description">How effectively do you identify and correct processing errors?</p>
+                    <div class="options">
+                        <label class="option">
+                            <input type="radio" name="error-handling" value="1">
+                            <span>No systematic error detection; manual correction</span>
+                            <span class="option-score">1</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="error-handling" value="2">
+                            <span>Basic error alerts; manual investigation</span>
+                            <span class="option-score">2</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="error-handling" value="3">
+                            <span>Automated error detection; documented correction procedures</span>
+                            <span class="option-score">3</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="error-handling" value="4">
+                            <span>Real-time error monitoring; automated correction where possible</span>
+                            <span class="option-score">4</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="error-handling" value="5">
+                            <span>Predictive error prevention; self-healing systems</span>
+                            <span class="option-score">5</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="question" data-control="PI1">
+                    <h3>Data Quality & Completeness</h3>
+                    <p class="question-description">How do you ensure data completeness and accuracy throughout processing?</p>
+                    <div class="options">
+                        <label class="option">
+                            <input type="radio" name="data-quality" value="1">
+                            <span>No data quality controls; rely on source systems</span>
+                            <span class="option-score">1</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="data-quality" value="2">
+                            <span>Basic completeness checks; manual quality reviews</span>
+                            <span class="option-score">2</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="data-quality" value="3">
+                            <span>Automated quality checks; data profiling and monitoring</span>
+                            <span class="option-score">3</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="data-quality" value="4">
+                            <span>Comprehensive quality framework; real-time monitoring</span>
+                            <span class="option-score">4</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="data-quality" value="5">
+                            <span>Advanced quality controls; ML-based anomaly detection</span>
+                            <span class="option-score">5</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Confidentiality Questions (C1) -->
+            <div class="question-section hidden" id="section-4">
+                <div class="section-header">
+                    <h2>🔒 Data Confidentiality</h2>
+                    <p>Assessing protection of confidential information throughout its lifecycle</p>
+                </div>
+
+                <div class="question" data-control="C1">
+                    <h3>Data Classification & Handling</h3>
+                    <p class="question-description">How well do you classify and protect confidential information?</p>
+                    <div class="options">
+                        <label class="option">
+                            <input type="radio" name="data-classification" value="1">
+                            <span>No data classification; uniform handling</span>
+                            <span class="option-score">1</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="data-classification" value="2">
+                            <span>Basic confidential/non-confidential categories</span>
+                            <span class="option-score">2</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="data-classification" value="3">
+                            <span>Multi-level classification; handling procedures documented</span>
+                            <span class="option-score">3</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="data-classification" value="4">
+                            <span>Automated classification; role-based access controls</span>
+                            <span class="option-score">4</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="data-classification" value="5">
+                            <span>Dynamic classification; context-aware protection</span>
+                            <span class="option-score">5</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="question" data-control="C1">
+                    <h3>Encryption & Data Protection</h3>
+                    <p class="question-description">How comprehensively do you protect confidential data?</p>
+                    <div class="options">
+                        <label class="option">
+                            <input type="radio" name="encryption" value="1">
+                            <span>No encryption; basic access controls</span>
+                            <span class="option-score">1</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="encryption" value="2">
+                            <span>Encryption for sensitive data only</span>
+                            <span class="option-score">2</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="encryption" value="3">
+                            <span>Encryption at rest and in transit; key management</span>
+                            <span class="option-score">3</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="encryption" value="4">
+                            <span>Comprehensive encryption; hardware security modules</span>
+                            <span class="option-score">4</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="encryption" value="5">
+                            <span>End-to-end encryption; zero-knowledge architecture</span>
+                            <span class="option-score">5</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Privacy Questions (P1-P8) -->
+            <div class="question-section hidden" id="section-5">
+                <div class="section-header">
+                    <h2>🛡️ Privacy Protection</h2>
+                    <p>Evaluating your privacy program and personal data protection practices</p>
+                </div>
+
+                <div class="question" data-control="P1">
+                    <h3>Privacy Program & Notice</h3>
+                    <p class="question-description">How mature is your privacy program and user notification?</p>
+                    <div class="options">
+                        <label class="option">
+                            <input type="radio" name="privacy-program" value="1">
+                            <span>No formal privacy program; basic privacy policy</span>
+                            <span class="option-score">1</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="privacy-program" value="2">
+                            <span>Basic privacy program; updated privacy notices</span>
+                            <span class="option-score">2</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="privacy-program" value="3">
+                            <span>Dedicated privacy officer; comprehensive privacy notices</span>
+                            <span class="option-score">3</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="privacy-program" value="4">
+                            <span>Mature privacy program; user-friendly notices and controls</span>
+                            <span class="option-score">4</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="privacy-program" value="5">
+                            <span>Privacy by design; dynamic consent management</span>
+                            <span class="option-score">5</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="question" data-control="P3">
+                    <h3>Data Collection & Consent</h3>
+                    <p class="question-description">How do you manage personal data collection and user consent?</p>
+                    <div class="options">
+                        <label class="option">
+                            <input type="radio" name="data-collection" value="1">
+                            <span>Collect all available data; implied consent</span>
+                            <span class="option-score">1</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="data-collection" value="2">
+                            <span>Some data minimization; basic consent mechanisms</span>
+                            <span class="option-score">2</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="data-collection" value="3">
+                            <span>Data minimization practiced; clear consent processes</span>
+                            <span class="option-score">3</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="data-collection" value="4">
+                            <span>Purpose-based collection; granular consent options</span>
+                            <span class="option-score">4</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="data-collection" value="5">
+                            <span>Strict minimization; dynamic consent with easy withdrawal</span>
+                            <span class="option-score">5</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="question" data-control="P8">
+                    <h3>Individual Rights & Data Subject Requests</h3>
+                    <p class="question-description">How well do you handle individual privacy rights and data requests?</p>
+                    <div class="options">
+                        <label class="option">
+                            <input type="radio" name="individual-rights" value="1">
+                            <span>No formal process for individual requests</span>
+                            <span class="option-score">1</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="individual-rights" value="2">
+                            <span>Basic access procedures; manual processing</span>
+                            <span class="option-score">2</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="individual-rights" value="3">
+                            <span>Documented procedures for all rights; reasonable timelines</span>
+                            <span class="option-score">3</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="individual-rights" value="4">
+                            <span>Streamlined processes; identity verification; tracking</span>
+                            <span class="option-score">4</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="individual-rights" value="5">
+                            <span>Self-service portal; automated fulfillment where possible</span>
+                            <span class="option-score">5</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div class="results-section" id="results">
+                <div class="maturity-level" id="maturityLevel">
+                    <h2 id="maturityTitle">Calculating...</h2>
+                    <p id="maturityDescription">Processing your responses...</p>
+                </div>
+
+                <div class="score-breakdown" id="scoreBreakdown">
+                    <!-- Score cards will be populated by JavaScript -->
+                </div>
+
+                <div class="recommendations" id="recommendations">
+                    <h3>🎯 Prioritized Recommendations</h3>
+                    <div id="recommendationsList">
+                        <!-- Recommendations will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <div class="export-section">
+                    <h3>📊 Export Your Assessment</h3>
+                    <p>Get your personalized SOC 2 readiness report and implementation roadmap</p>
+                    <div class="export-buttons">
+                        <button class="btn" onclick="generatePDFReport()">📄 Download PDF Report</button>
+                        <button class="btn btn-secondary" onclick="generateExcelRoadmap()">📊 Excel Roadmap</button>
+                        <button class="btn btn-secondary" onclick="emailReport()">📧 Email Report</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation -->
+            <div class="navigation">
+                <button type="button" class="btn btn-secondary" id="prevBtn" onclick="event.preventDefault(); previousSection(); return false;" disabled>⬅️ Previous</button>
+                <button type="button" class="btn" id="nextBtn" onclick="event.preventDefault(); nextSection(); return false;">Next ➡️</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Assessment state
+        let currentSection = 0;
+        let totalSections = 6;
+        let responses = {};
+        let organizationProfile = {};
+
+        // Assessment data structure
+        const assessmentQuestions = {
+            security: [
+                'security-governance', 'risk-management', 'access-control', 
+                'monitoring', 'change-management'
+            ],
+            availability: ['business-continuity', 'performance'],
+            processing: ['error-handling', 'data-quality'],
+            confidentiality: ['data-classification', 'encryption'],
+            privacy: ['privacy-program', 'data-collection', 'individual-rights']
+        };
+
+        // Initialize assessment
+        document.addEventListener('DOMContentLoaded', function() {
+            updateProgress();
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            // Industry selection
+            document.querySelectorAll('.industry-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    const isIndustryOption = this.hasAttribute('data-industry');
+                    const isSizeOption = this.hasAttribute('data-size');
+                    
+                    if (isIndustryOption) {
+                        // Clear other industry selections
+                        this.parentElement.querySelectorAll('.industry-option').forEach(opt => 
+                            opt.classList.remove('selected'));
+                        this.classList.add('selected');
+                        organizationProfile.industry = this.dataset.industry;
+                    } else if (isSizeOption) {
+                        // Clear other size selections
+                        this.parentElement.querySelectorAll('.industry-option').forEach(opt => 
+                            opt.classList.remove('selected'));
+                        this.classList.add('selected');
+                        organizationProfile.size = this.dataset.size;
+                    }
+                    
+                    checkSectionCompletion();
+                });
+            });
+
+            // Radio button selections
+            document.querySelectorAll('input[type="radio"]').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    // Update option styling
+                    this.closest('.options').querySelectorAll('.option').forEach(opt => 
+                        opt.classList.remove('selected'));
+                    this.closest('.option').classList.add('selected');
+                    
+                    // Store response
+                    responses[this.name] = parseInt(this.value);
+                    checkSectionCompletion();
+                });
+            });
+        }
+
+        function updateProgress() {
+            const progress = (currentSection / totalSections) * 100;
+            document.getElementById('progressFill').style.width = progress + '%';
+            document.getElementById('progressPercent').textContent = Math.round(progress) + '%';
+            
+            const progressTexts = [
+                'Getting Started',
+                'Security Foundation',
+                'System Availability', 
+                'Processing Integrity',
+                'Data Confidentiality',
+                'Privacy Protection',
+                'Assessment Complete'
+            ];
+            
+            document.getElementById('progressText').textContent = progressTexts[currentSection];
+        }
+
+        function nextSection() {
+            if (currentSection < totalSections - 1) {
+                // Hide current section
+                const currentSectionElement = document.getElementById(`section-${currentSection}`);
+                if (currentSectionElement) {
+                    currentSectionElement.classList.add('hidden');
+                }
+                
+                // Show next section
+                currentSection++;
+                
+                if (currentSection < totalSections) {
+                    const nextSectionElement = document.getElementById(`section-${currentSection}`);
+                    if (nextSectionElement) {
+                        nextSectionElement.classList.remove('hidden');
+                    }
+                    updateProgress();
+                    updateNavigationButtons();
+                    checkSectionCompletion(); // Check completion status when section loads
+                }
+            } else {
+                // Show results
+                calculateResults();
+            }
+        }
+
+        function previousSection() {
+            if (currentSection > 0) {
+                // Hide current section
+                if (currentSection < totalSections) {
+                    document.getElementById(`section-${currentSection}`).classList.add('hidden');
+                }
+                
+                // Show previous section
+                currentSection--;
+                document.getElementById(`section-${currentSection}`).classList.remove('hidden');
+                
+                // Hide results if we're going back from them
+                document.getElementById('results').style.display = 'none';
+                
+                updateProgress();
+                updateNavigationButtons();
+                checkSectionCompletion(); // Check completion status when section loads
+            }
+        }
+
+        function updateNavigationButtons() {
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            
+            prevBtn.disabled = currentSection === 0;
+            
+            if (currentSection === totalSections - 1) {
+                nextBtn.textContent = '🎯 Calculate Results';
+            } else {
+                nextBtn.textContent = 'Next ➡️';
+            }
+        }
+
+        function checkSectionCompletion() {
+            const nextBtn = document.getElementById('nextBtn');
+            let isComplete = false;
+
+            if (currentSection === 0) {
+                // Check if industry and size are selected
+                isComplete = organizationProfile.industry && organizationProfile.size;
+            } else {
+                // Check if all questions in current section are answered
+                const currentSectionQuestions = getCurrentSectionQuestions();
+                isComplete = currentSectionQuestions.every(q => responses.hasOwnProperty(q));
+            }
+
+            nextBtn.disabled = !isComplete;
+        }
+
+        function getCurrentSectionQuestions() {
+            const sectionQuestions = {
+                1: assessmentQuestions.security,
+                2: assessmentQuestions.availability,
+                3: assessmentQuestions.processing,
+                4: assessmentQuestions.confidentiality,
+                5: assessmentQuestions.privacy
+            };
+            
+            return sectionQuestions[currentSection] || [];
+        }
+
+        function calculateResults() {
+            // Calculate scores for each trust service
+            const scores = {
+                security: calculateTrustServiceScore(assessmentQuestions.security),
+                availability: calculateTrustServiceScore(assessmentQuestions.availability),
+                processing: calculateTrustServiceScore(assessmentQuestions.processing),
+                confidentiality: calculateTrustServiceScore(assessmentQuestions.confidentiality),
+                privacy: calculateTrustServiceScore(assessmentQuestions.privacy)
+            };
+
+            // Calculate overall maturity level
+            const overallScore = Object.values(scores).reduce((sum, score) => sum + score, 0) / Object.values(scores).length;
+            const maturityLevel = getMaturityLevel(overallScore);
+
+            // Hide assessment content and show results
+            const assessmentContent = document.querySelector('.assessment-content');
+            const navigation = document.querySelector('.navigation');
+            
+            if (assessmentContent) assessmentContent.style.display = 'none';
+            if (navigation) navigation.style.display = 'none';
+
+            // Update progress to 100%
+            const progressFill = document.getElementById('progressFill');
+            const progressPercent = document.getElementById('progressPercent');
+            const progressText = document.getElementById('progressText');
+            
+            if (progressFill) progressFill.style.width = '100%';
+            if (progressPercent) progressPercent.textContent = '100%';
+            if (progressText) progressText.textContent = 'Assessment Complete';
+
+            // Create and display results overlay
+            const simpleResults = document.createElement('div');
+            simpleResults.id = 'assessment-results';
+            simpleResults.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: white;
+                z-index: 10000;
+                padding: 20px;
+                font-family: 'Segoe UI', Arial, sans-serif;
+                overflow-y: auto;
+                box-sizing: border-box;
+            `;
+            
+            simpleResults.innerHTML = `
+                <div style="max-width: 800px; margin: 0 auto;">
+                    <h1 style="color: #2e7d33; text-align: center; margin-bottom: 30px;">🎉 SOC 2 Assessment Complete!</h1>
+                    
+                    <div style="background: linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 100%); padding: 25px; border: 2px solid #4CAF50; border-radius: 12px; margin: 20px 0; text-align: center;">
+                        <h2 style="margin: 0 0 10px 0; color: #1565c0;">Your SOC 2 Readiness Score: ${overallScore.toFixed(1)}/5.0</h2>
+                        <h3 style="margin: 0 0 15px 0; color: #2e7d33;">Maturity Level: ${maturityLevel.name}</h3>
+                        <p style="margin: 0; font-size: 16px; color: #424242;"><strong>Assessment:</strong> ${maturityLevel.description}</p>
+                    </div>
+                    
+                    <div style="background: #fff8e1; padding: 20px; border-radius: 10px; margin: 20px 0; border-left: 5px solid #ffc107;">
+                        <h3 style="color: #f57c00; margin-top: 0;">📊 Detailed Scores by Trust Service Category</h3>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">
+                            <div style="background: white; padding: 15px; border-radius: 8px; text-align: center; border: 1px solid #e0e0e0;">
+                                <strong style="color: #1976d2;">Security</strong><br>
+                                <span style="font-size: 24px; color: ${scores.security >= 3.5 ? '#4caf50' : scores.security >= 2.5 ? '#ff9800' : '#f44336'};">${scores.security.toFixed(1)}</span><span style="color: #666;">/5.0</span>
+                            </div>
+                            <div style="background: white; padding: 15px; border-radius: 8px; text-align: center; border: 1px solid #e0e0e0;">
+                                <strong style="color: #1976d2;">Availability</strong><br>
+                                <span style="font-size: 24px; color: ${scores.availability >= 3.5 ? '#4caf50' : scores.availability >= 2.5 ? '#ff9800' : '#f44336'};">${scores.availability.toFixed(1)}</span><span style="color: #666;">/5.0</span>
+                            </div>
+                            <div style="background: white; padding: 15px; border-radius: 8px; text-align: center; border: 1px solid #e0e0e0;">
+                                <strong style="color: #1976d2;">Processing Integrity</strong><br>
+                                <span style="font-size: 24px; color: ${scores.processing >= 3.5 ? '#4caf50' : scores.processing >= 2.5 ? '#ff9800' : '#f44336'};">${scores.processing.toFixed(1)}</span><span style="color: #666;">/5.0</span>
+                            </div>
+                            <div style="background: white; padding: 15px; border-radius: 8px; text-align: center; border: 1px solid #e0e0e0;">
+                                <strong style="color: #1976d2;">Confidentiality</strong><br>
+                                <span style="font-size: 24px; color: ${scores.confidentiality >= 3.5 ? '#4caf50' : scores.confidentiality >= 2.5 ? '#ff9800' : '#f44336'};">${scores.confidentiality.toFixed(1)}</span><span style="color: #666;">/5.0</span>
+                            </div>
+                            <div style="background: white; padding: 15px; border-radius: 8px; text-align: center; border: 1px solid #e0e0e0;">
+                                <strong style="color: #1976d2;">Privacy</strong><br>
+                                <span style="font-size: 24px; color: ${scores.privacy >= 3.5 ? '#4caf50' : scores.privacy >= 2.5 ? '#ff9800' : '#f44336'};">${scores.privacy.toFixed(1)}</span><span style="color: #666;">/5.0</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="background: #e8f5e8; padding: 20px; border-radius: 10px; margin: 20px 0; border-left: 5px solid #4caf50;">
+                        <h3 style="color: #2e7d33; margin-top: 0;">🎯 Key Recommendations</h3>
+                        <p style="margin-bottom: 15px; color: #424242;">Based on your assessment scores:</p>
+                        <ul style="color: #424242; line-height: 1.6;">
+                            ${overallScore < 2 ? '<li><strong>Focus on establishing basic security and compliance foundations</strong> - Start with fundamental policies and procedures</li>' : ''}
+                            ${overallScore >= 2 && overallScore < 3.5 ? '<li><strong>Document existing procedures and implement systematic controls</strong> - Formalize your current practices</li>' : ''}
+                            ${overallScore >= 3.5 ? '<li><strong>Consider pursuing formal SOC 2 audit readiness</strong> - Your organization shows strong compliance foundation</li>' : ''}
+                            <li><strong>Review lowest-scoring areas for immediate improvement opportunities</strong></li>
+                            <li><strong>Develop a phased implementation plan</strong> - Address critical gaps first</li>
+                            <li><strong>Assign ownership and accountability</strong> - Ensure someone is responsible for each area</li>
+                        </ul>
+                    </div>
+                    
+                    <div style="text-align: center; margin: 30px 0;">
+                        <button onclick="this.parentElement.parentElement.remove()" style="
+                            background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+                            color: white; 
+                            border: none; 
+                            padding: 12px 30px; 
+                            border-radius: 25px; 
+                            font-size: 16px; 
+                            font-weight: 600;
+                            cursor: pointer; 
+                            margin: 10px;
+                            transition: transform 0.2s ease;
+                            box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
+                        " onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                            📋 Close Assessment
+                        </button>
+                    </div>
+                    
+                    <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin: 20px 0; text-align: center; font-size: 14px; color: #666;">
+                        <p style="margin: 0;"><strong>Next Steps:</strong> Consider scheduling a compliance consultation or beginning implementation of recommended controls based on your assessment results.</p>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(simpleResults);
+        }
+
+        function calculateTrustServiceScore(questions) {
+            if (questions.length === 0) return 0;
+            
+            const totalScore = questions.reduce((sum, question) => {
+                return sum + (responses[question] || 0);
+            }, 0);
+            
+            return totalScore / questions.length;
+        }
+
+        function getMaturityLevel(score) {
+            if (score >= 4.5) return { level: 5, name: 'Optimized', description: 'Your organization demonstrates mature, continuously improving SOC 2 practices' };
+            if (score >= 3.5) return { level: 4, name: 'Managed', description: 'Your organization has strong SOC 2 controls with room for optimization' };
+            if (score >= 2.5) return { level: 3, name: 'Defined', description: 'Your organization has documented SOC 2 processes that need enhancement' };
+            if (score >= 1.5) return { level: 2, name: 'Developing', description: 'Your organization has basic SOC 2 foundations but significant gaps remain' };
+            return { level: 1, name: 'Initial', description: 'Your organization needs substantial SOC 2 program development' };
+        }
+
+        function displayMaturityLevel(maturityLevel, score) {
+            const levelElement = document.getElementById('maturityLevel');
+            const titleElement = document.getElementById('maturityTitle');
+            const descriptionElement = document.getElementById('maturityDescription');
+            
+            if (levelElement && titleElement && descriptionElement) {
+                levelElement.className = `maturity-level level-${maturityLevel.level}`;
+                titleElement.textContent = `Level ${maturityLevel.level}: ${maturityLevel.name}`;
+                descriptionElement.textContent = `${maturityLevel.description} (Overall Score: ${score.toFixed(1)}/5.0)`;
+            }
+        }
+
+        function displayScoreBreakdown(scores) {
+            const breakdown = document.getElementById('scoreBreakdown');
+            const trustServices = {
+                security: { name: 'Security', class: 'security' },
+                availability: { name: 'Availability', class: 'availability' },
+                processing: { name: 'Processing Integrity', class: 'processing' },
+                confidentiality: { name: 'Confidentiality', class: 'confidentiality' },
+                privacy: { name: 'Privacy', class: 'privacy' }
+            };
+
+            breakdown.innerHTML = Object.entries(scores).map(([key, score]) => `
+                <div class="score-card">
+                    <h3>${trustServices[key].name}</h3>
+                    <div class="score-value ${trustServices[key].class}">${score.toFixed(1)}</div>
+                    <p>out of 5.0</p>
+                </div>
+            `).join('');
+        }
+
+        function generateRecommendations(scores, maturityLevel) {
+            const recommendations = getIndustryRecommendations(scores, organizationProfile);
+            const recommendationsList = document.getElementById('recommendationsList');
+            
+            const priorityLevels = {
+                critical: { name: 'Critical Priority', class: 'critical' },
+                high: { name: 'High Priority', class: 'high' },
+                medium: { name: 'Medium Priority', class: 'medium' },
+                low: { name: 'Low Priority', class: 'low' }
+            };
+
+            recommendationsList.innerHTML = Object.entries(recommendations).map(([priority, items]) => `
+                <div class="priority-section">
+                    <div class="priority-header ${priorityLevels[priority].class}">
+                        ${priorityLevels[priority].name}
+                    </div>
+                    ${items.map(item => `
+                        <div class="recommendation-item">
+                            <h4>${item.title}</h4>
+                            <p>${item.description}</p>
+                            <span class="timeline">${item.timeline}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            `).join('');
+        }
+
+        function getIndustryRecommendations(scores, profile) {
+            const baseRecommendations = {
+                critical: [],
+                high: [],
+                medium: [],
+                low: []
+            };
+
+            // Security recommendations
+            if (scores.security < 3.0) {
+                baseRecommendations.critical.push({
+                    title: 'Establish Security Governance',
+                    description: 'Implement formal security policies, assign security roles, and establish executive oversight.',
+                    timeline: 'Month 1-2'
+                });
+            }
+
+            if (scores.security < 2.5) {
+                baseRecommendations.critical.push({
+                    title: 'Implement Access Controls',
+                    description: 'Deploy identity management system with role-based access and MFA for privileged accounts.',
+                    timeline: 'Month 2-3'
+                });
+            }
+
+            // Availability recommendations  
+            if (scores.availability < 3.0) {
+                baseRecommendations.high.push({
+                    title: 'Develop Business Continuity Plan',
+                    description: 'Create and test disaster recovery procedures with defined RTO/RPO objectives.',
+                    timeline: 'Month 3-4'
+                });
+            }
+
+            // Processing Integrity recommendations
+            if (scores.processing < 3.0) {
+                baseRecommendations.high.push({
+                    title: 'Implement Data Validation Controls',
+                    description: 'Deploy automated data validation and error detection mechanisms.',
+                    timeline: 'Month 4-5'
+                });
+            }
+
+            // Confidentiality recommendations
+            if (scores.confidentiality < 3.0) {
+                baseRecommendations.medium.push({
+                    title: 'Deploy Data Classification',
+                    description: 'Implement data classification scheme with appropriate protection controls.',
+                    timeline: 'Month 5-6'
+                });
+            }
+
+            // Privacy recommendations
+            if (scores.privacy < 3.0) {
+                baseRecommendations.medium.push({
+                    title: 'Enhance Privacy Program',
+                    description: 'Establish privacy officer role and implement consent management processes.',
+                    timeline: 'Month 6-7'
+                });
+            }
+
+            // Industry-specific recommendations
+            addIndustrySpecificRecommendations(baseRecommendations, profile, scores);
+
+            return baseRecommendations;
+        }
+
+        function addIndustrySpecificRecommendations(recommendations, profile, scores) {
+            switch (profile.industry) {
+                case 'saas':
+                    if (scores.security < 3.5) {
+                        recommendations.high.push({
+                            title: 'Implement API Security Controls',
+                            description: 'Deploy API authentication, rate limiting, and monitoring for cloud services.',
+                            timeline: 'Month 2-3'
+                        });
+                    }
+                    break;
+                    
+                case 'financial':
+                    if (scores.confidentiality < 4.0) {
+                        recommendations.critical.push({
+                            title: 'Enhance Financial Data Protection',
+                            description: 'Implement PCI DSS controls and enhanced encryption for financial transactions.',
+                            timeline: 'Month 1-2'
+                        });
+                    }
+                    break;
+                    
+                case 'healthcare':
+                    if (scores.privacy < 4.0) {
+                        recommendations.critical.push({
+                            title: 'HIPAA Compliance Enhancement',
+                            description: 'Implement PHI protection controls and business associate agreements.',
+                            timeline: 'Month 1-2'
+                        });
+                    }
+                    break;
+            }
+        }
+
+        // Export functions
+        function generatePDFReport() {
+            // Create comprehensive assessment report
+            const reportData = generateReportData();
+            const reportHTML = createReportHTML(reportData);
+            
+            // Create and download HTML report (can be converted to PDF by browser)
+            const blob = new Blob([reportHTML], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `SOC2_Readiness_Assessment_${new Date().toISOString().split('T')[0]}.html`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function generateExcelRoadmap() {
+            // Create Excel-compatible CSV roadmap
+            const roadmapData = createRoadmapData();
+            const csvContent = convertToCSV(roadmapData);
+            
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `SOC2_Implementation_Roadmap_${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function emailReport() {
+            // Generate email content and open mail client
+            const reportData = generateReportData();
+            const emailSubject = encodeURIComponent(`SOC 2 Readiness Assessment Results - ${organizationProfile.industry || 'Organization'}`);
+            const emailBody = encodeURIComponent(createEmailBody(reportData));
+            
+            const mailtoLink = `mailto:?subject=${emailSubject}&body=${emailBody}`;
+            window.open(mailtoLink);
+        }
+
+        function generateReportData() {
+            // Calculate scores for comprehensive report
+            const scores = {
+                security: calculateTrustServiceScore(assessmentQuestions.security),
+                availability: calculateTrustServiceScore(assessmentQuestions.availability),
+                processing: calculateTrustServiceScore(assessmentQuestions.processing),
+                confidentiality: calculateTrustServiceScore(assessmentQuestions.confidentiality),
+                privacy: calculateTrustServiceScore(assessmentQuestions.privacy)
+            };
+
+            const overallScore = Object.values(scores).reduce((sum, score) => sum + score, 0) / Object.values(scores).length;
+            const maturityLevel = getMaturityLevel(overallScore);
+            const recommendations = getIndustryRecommendations(scores, organizationProfile);
+
+            return {
+                organizationProfile,
+                scores,
+                overallScore,
+                maturityLevel,
+                recommendations,
+                assessmentDate: new Date().toLocaleDateString(),
+                responses: responses
+            };
+        }
+
+        function createReportHTML(data) {
+            return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOC 2 Readiness Assessment Report</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Arial, sans-serif; 
+            max-width: 800px; 
+            margin: 0 auto; 
+            padding: 20px; 
+            color: #333;
+        }
+        .header { 
+            background: linear-gradient(135deg, #3498db, #2980b9); 
+            color: white; 
+            padding: 30px; 
+            border-radius: 10px; 
+            text-align: center; 
+            margin-bottom: 30px;
+        }
+        .header h1 { margin: 0; font-size: 2.5rem; }
+        .header p { margin: 10px 0 0 0; opacity: 0.9; }
+        .maturity-section { 
+            background: #f8f9fa; 
+            padding: 25px; 
+            border-radius: 10px; 
+            border-left: 5px solid #3498db; 
+            margin-bottom: 30px;
+        }
+        .scores-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); 
+            gap: 20px; 
+            margin: 20px 0;
+        }
+        .score-card { 
+            background: white; 
+            padding: 20px; 
+            border-radius: 8px; 
+            text-align: center; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .score-value { font-size: 2.5rem; font-weight: bold; color: #3498db; }
+        .recommendations { background: white; padding: 25px; border-radius: 10px; margin: 20px 0; }
+        .priority-section { margin: 20px 0; }
+        .priority-header { 
+            padding: 12px 20px; 
+            border-radius: 6px; 
+            color: white; 
+            font-weight: bold; 
+            margin-bottom: 15px;
+        }
+        .priority-header.critical { background: #e74c3c; }
+        .priority-header.high { background: #f39c12; }
+        .priority-header.medium { background: #2ecc71; }
+        .priority-header.low { background: #95a5a6; }
+        .recommendation-item { 
+            background: #f8f9fa; 
+            padding: 15px; 
+            border-radius: 6px; 
+            margin: 10px 0; 
+            border-left: 4px solid #3498db;
+        }
+        .recommendation-item h4 { margin: 0 0 10px 0; color: #2c3e50; }
+        .recommendation-item p { margin: 0 0 10px 0; color: #7f8c8d; }
+        .timeline { font-weight: bold; color: #e74c3c; }
+        @media print { 
+            body { margin: 0; } 
+            .header { background: #3498db !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔐 SOC 2 Readiness Assessment Report</h1>
+        <p>Assessment Date: ${data.assessmentDate}</p>
+        <p>Industry: ${data.organizationProfile.industry || 'Not specified'} | Size: ${data.organizationProfile.size || 'Not specified'}</p>
+    </div>
+
+    <div class="maturity-section">
+        <h2>Overall Maturity Level: ${data.maturityLevel.name} (Level ${data.maturityLevel.level})</h2>
+        <p><strong>Overall Score:</strong> ${data.overallScore.toFixed(1)}/5.0</p>
+        <p>${data.maturityLevel.description}</p>
+    </div>
+
+    <div class="scores-section">
+        <h2>Trust Service Scores</h2>
+        <div class="scores-grid">
+            <div class="score-card">
+                <h3>Security</h3>
+                <div class="score-value">${data.scores.security.toFixed(1)}</div>
+                <p>out of 5.0</p>
+            </div>
+            <div class="score-card">
+                <h3>Availability</h3>
+                <div class="score-value">${data.scores.availability.toFixed(1)}</div>
+                <p>out of 5.0</p>
+            </div>
+            <div class="score-card">
+                <h3>Processing Integrity</h3>
+                <div class="score-value">${data.scores.processing.toFixed(1)}</div>
+                <p>out of 5.0</p>
+            </div>
+            <div class="score-card">
+                <h3>Confidentiality</h3>
+                <div class="score-value">${data.scores.confidentiality.toFixed(1)}</div>
+                <p>out of 5.0</p>
+            </div>
+            <div class="score-card">
+                <h3>Privacy</h3>
+                <div class="score-value">${data.scores.privacy.toFixed(1)}</div>
+                <p>out of 5.0</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="recommendations">
+        <h2>🎯 Prioritized Recommendations</h2>
+        ${Object.entries(data.recommendations).map(([priority, items]) => {
+            if (items.length === 0) return '';
+            return `
+                <div class="priority-section">
+                    <div class="priority-header ${priority}">${priority.charAt(0).toUpperCase() + priority.slice(1)} Priority</div>
+                    ${items.map(item => `
+                        <div class="recommendation-item">
+                            <h4>${item.title}</h4>
+                            <p>${item.description}</p>
+                            <span class="timeline">${item.timeline}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }).join('')}
+    </div>
+
+    <div class="footer" style="margin-top: 40px; padding: 20px; background: #f8f9fa; border-radius: 10px; text-align: center;">
+        <p><strong>Next Steps:</strong></p>
+        <ol style="text-align: left; max-width: 600px; margin: 0 auto;">
+            <li>Review and prioritize the recommendations above</li>
+            <li>Assign ownership for each critical and high priority item</li>
+            <li>Create project timelines and resource allocation plans</li>
+            <li>Schedule follow-up assessment in 3-6 months</li>
+            <li>Consider engaging SOC 2 compliance professionals for guidance</li>
+        </ol>
+    </div>
+</body>
+</html>
+            `;
+        }
+
+        function createRoadmapData() {
+            const reportData = generateReportData();
+            const roadmapItems = [];
+
+            // Add header
+            roadmapItems.push(['Priority', 'Title', 'Description', 'Timeline', 'Trust Service', 'Estimated Effort', 'Dependencies']);
+
+            // Process recommendations
+            Object.entries(reportData.recommendations).forEach(([priority, items]) => {
+                items.forEach(item => {
+                    const effort = getEffortEstimate(priority, item.title);
+                    const trustService = getTrustServiceForRecommendation(item.title);
+                    const dependencies = getDependenciesForRecommendation(item.title);
+                    
+                    roadmapItems.push([
+                        priority.charAt(0).toUpperCase() + priority.slice(1),
+                        item.title,
+                        item.description,
+                        item.timeline,
+                        trustService,
+                        effort,
+                        dependencies
+                    ]);
+                });
+            });
+
+            return roadmapItems;
+        }
+
+        function getEffortEstimate(priority, title) {
+            const effortMap = {
+                'critical': {
+                    'Establish Security Governance': '40-60 hours',
+                    'Implement Access Controls': '60-80 hours',
+                    'Enhance Financial Data Protection': '80-120 hours',
+                    'HIPAA Compliance Enhancement': '100-150 hours'
+                },
+                'high': {
+                    'Develop Business Continuity Plan': '60-80 hours',
+                    'Implement Data Validation Controls': '40-60 hours',
+                    'Implement API Security Controls': '50-70 hours'
+                },
+                'medium': {
+                    'Deploy Data Classification': '30-40 hours',
+                    'Enhance Privacy Program': '40-60 hours'
+                },
+                'low': {
+                    'default': '20-30 hours'
+                }
+            };
+
+            return effortMap[priority]?.[title] || effortMap[priority]?.['default'] || '30-50 hours';
+        }
+
+        function getTrustServiceForRecommendation(title) {
+            if (title.includes('Security') || title.includes('Governance') || title.includes('Access')) return 'Security';
+            if (title.includes('Continuity') || title.includes('Availability') || title.includes('Performance')) return 'Availability';
+            if (title.includes('Data Validation') || title.includes('Processing') || title.includes('Quality')) return 'Processing Integrity';
+            if (title.includes('Classification') || title.includes('Encryption') || title.includes('Confidentiality')) return 'Confidentiality';
+            if (title.includes('Privacy') || title.includes('HIPAA') || title.includes('Consent')) return 'Privacy';
+            return 'Security';
+        }
+
+        function getDependenciesForRecommendation(title) {
+            const dependencyMap = {
+                'Implement Access Controls': 'Security Governance',
+                'Develop Business Continuity Plan': 'Risk Management',
+                'Implement Data Validation Controls': 'Data Classification',
+                'Deploy Data Classification': 'Security Governance',
+                'Enhance Privacy Program': 'Data Classification'
+            };
+
+            return dependencyMap[title] || 'None';
+        }
+
+        function convertToCSV(data) {
+            return data.map(row => 
+                row.map(cell => 
+                    typeof cell === 'string' && cell.includes(',') 
+                        ? `"${cell.replace(/"/g, '""')}"` 
+                        : cell
+                ).join(',')
+            ).join('\n');
+        }
+
+        function createEmailBody(data) {
+            return `SOC 2 Readiness Assessment Results
+
+Organization Profile:
+- Industry: ${data.organizationProfile.industry || 'Not specified'}
+- Size: ${data.organizationProfile.size || 'Not specified'}
+
+Overall Results:
+- Maturity Level: ${data.maturityLevel.name} (Level ${data.maturityLevel.level})
+- Overall Score: ${data.overallScore.toFixed(1)}/5.0
+
+Trust Service Scores:
+- Security: ${data.scores.security.toFixed(1)}/5.0
+- Availability: ${data.scores.availability.toFixed(1)}/5.0
+- Processing Integrity: ${data.scores.processing.toFixed(1)}/5.0
+- Confidentiality: ${data.scores.confidentiality.toFixed(1)}/5.0
+- Privacy: ${data.scores.privacy.toFixed(1)}/5.0
+
+Top Recommendations:
+${Object.entries(data.recommendations).map(([priority, items]) => {
+    if (items.length === 0 || priority === 'low') return '';
+    return `
+${priority.toUpperCase()} PRIORITY:
+${items.map(item => `- ${item.title} (${item.timeline})`).join('\n')}`;
+}).filter(section => section.trim()).join('\n')}
+
+Next Steps:
+1. Review detailed HTML report for complete recommendations
+2. Prioritize critical and high priority items
+3. Assign ownership and create implementation timeline
+4. Schedule follow-up assessment in 3-6 months
+
+Assessment completed on: ${data.assessmentDate}
+`;
+        }
+    </script>
+</body>
+</html>
