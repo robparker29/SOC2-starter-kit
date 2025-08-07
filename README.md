@@ -148,7 +148,7 @@ python controls/soc2_iso_control_mapping.py            # International clients
 ## 🤓 **About Me**
 I'm a Security Compliance Specialist specializing in Governance, Risk, and Compliance (GRC). I developed this SOC2 starter kit as a passion project to streamline the audit process for organizations navigating compliance requirements. While there's always room for improvement, I hope it provides a solid foundation to get you started.
 
-I'd love to connect with you on [LinkedIn](linkedin.com/in/parker-w-robertson). For professional inquiries and feedback on the Starter Kit, please contact me at [parker@pwrstrat.com](mailto:parker@pwrstrat.com)
+I'd love to connect with you on [LinkedIn](https://linkedin.com/in/parker-w-robertson). For professional inquiries and feedback on the Starter Kit, please contact me at [parker@pwrstrat.com](mailto:parker@pwrstrat.com)
 
 If this resource proves valuable to your organization, I'd be grateful if you'd share it with others who might benefit. Hearing about your success would truly make my day.
 
